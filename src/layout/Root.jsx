@@ -1,31 +1,16 @@
-import{ useState } from "react";
-import {  Outlet } from "react-router";
+import { useState } from "react";
+import { Outlet } from "react-router";
 import Sidebar from "../components/global/Sidebar";
 import Navbar from "../components/global/Navbar";
 
-
-
 const Root = () => {
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-//   const { user, loading } = useAuth();
-
-//   if (loading) {
-//     return <Loader />;
-//   }
-
-//   // user না থাকলে login page
-//   if (!user) {
-//     return <Navigate to="/auth/login" replace />;
-//   }
-
   return (
-
-    <div className="flex min-h-screen bg-[#F7F7FA] text-white relative">
+    <div className="flex h-screen overflow-hidden bg-white">
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-[260px] border-r border-[#FFFFFF] h-screen sticky top-0">
+      <aside className="hidden md:block w-[260px] px-1 h-screen shrink-0 bg-[#532C89]">
         <Sidebar />
       </aside>
 
@@ -40,30 +25,28 @@ const Root = () => {
           />
 
           {/* Sidebar */}
-          <div className="absolute left-0 top-0 h-full w-[260px] bg-[#FFFFFF] border-r border-[#2A2A2A]">
-
+          <aside className="absolute left-0 top-0 h-full w-[210px] bg-[#532C89] shadow-lg">
             <Sidebar closeSidebar={() => setSidebarOpen(false)} />
-
-          </div>
+          </aside>
 
         </div>
       )}
 
-      {/* Right Section */}
-      <div className="flex flex-col flex-1">
+      {/* Right Content */}
+      <div className="flex flex-1 flex-col overflow-hidden bg-white">
 
+        {/* Navbar */}
         <Navbar setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 p-6 bg-[#FFFFFF] min-h-[calc(100vh-80px)]">
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto px-6 py-5 bg-white text-black">
           <Outlet />
         </main>
 
       </div>
 
     </div>
-
   );
-
 };
 
 export default Root;

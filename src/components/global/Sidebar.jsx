@@ -1,18 +1,16 @@
 import React from "react";
 import { Link, NavLink } from "react-router";
-import logo from "../../assets/hero.png"
+import logo from "../../assets/logo-dash.png";
 import {
-  LayoutDashboard,
-  Gamepad2,
-  Grid2X2,
+  House,
   Users,
+  Grid2x2,
+  Gamepad2,
   UtensilsCrossed,
   CalendarDays,
-  ClipboardList,
-  UserCog,
+  CalendarCheck2,
+  Shield,
   Settings,
-  User,
-  LogIn,
   X,
 } from "lucide-react";
 
@@ -20,22 +18,22 @@ const menuItems = [
   {
     path: "/",
     label: "Home",
-    icon: LayoutDashboard,
-  },
-  {
-    path: "/game-management",
-    label: "Game Management",
-    icon: Gamepad2,
-  },
-  {
-    path: "/category",
-    label: "Category",
-    icon: Grid2X2,
+    icon: House,
   },
   {
     path: "/leads",
     label: "Leads",
     icon: Users,
+  },
+  {
+    path: "/category",
+    label: "Category",
+    icon: Grid2x2,
+  },
+  {
+    path: "/game-management",
+    label: "Game Management",
+    icon: Gamepad2,
   },
   {
     path: "/food-management",
@@ -49,13 +47,13 @@ const menuItems = [
   },
   {
     path: "/booking",
-    label: "Booking",
-    icon: ClipboardList,
+    label: "Bookings",
+    icon: CalendarCheck2,
   },
   {
     path: "/sub-admin",
     label: "Sub Admin",
-    icon: UserCog,
+    icon: Shield,
   },
   {
     path: "/setting",
@@ -65,37 +63,66 @@ const menuItems = [
 ];
 
 const Sidebar = ({ closeSidebar }) => {
-  const linkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all font-medium ${isActive
-      ? "bg-white text-[#532C89]"
+  const linkClass = ({ isActive }) => `
+    relative
+    overflow-hidden
+    flex
+    items-center
+    gap-3
+    h-[44px]
+    px-4
+    rounded-xl
+    transition-all
+    font-medium
+    ${isActive
+      ? "bg-white"
       : "text-white/80 hover:bg-white/10 hover:text-white"
-    }`;
+    }
+  `;
 
   return (
-    <div className="flex flex-col h-full bg-[#532C89] overflow-y-auto">
+    <div className="relative flex flex-col h-full bg-[#532C89] overflow-y-auto no-scrollbar">
+
+      {/* SVG Gradient for Icons */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <linearGradient id="menuGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6C04D7" />
+            <stop offset="100%" stopColor="#CD4ECD" />
+          </linearGradient>
+        </defs>
+      </svg>
 
       {/* Logo */}
       <Link
         to="/"
-        className="flex flex-col items-center pt-8 pb-6"
+        className="flex flex-col items-center pt-5 pb-5"
       >
         <img
           src={logo}
-          className="w-16 h-16 rounded-xl"
-          alt=""
+          className="w-16 h-16 md:w-20 md:h-20 rounded-xl"
+          alt="logo"
         />
 
-        <div className="mt-3 bg-white rounded-full px-8 py-1">
-          <p className="text-[#532C89] text-sm font-semibold">
-            Admin
-          </p>
+        {/* Divider */}
+        <div className="w-full mt-5">
+          <div className="border-t border-[#E8EAED]"></div>
+        </div>
+
+        {/* Admin Badge */}
+        <div className="w-full px-2 mt-2.5">
+          <div className="bg-white rounded-full h-8 px-3 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
+
+            <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
+              Admin
+            </p>
+          </div>
         </div>
       </Link>
 
-      <div className="my-4 border-t border-[#1F1F1F"></div>
-
       {/* Navigation */}
-      <nav className="flex flex-col gap-1 px-3">
+      <nav className="flex flex-col gap-2 px-2">
         {menuItems.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
@@ -106,10 +133,19 @@ const Sidebar = ({ closeSidebar }) => {
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <span className="absolute left-0 top-0 h-full w-[5px] bg-[#00CE51] rounded-r" />
+                  <span className="absolute left-0 top-0 h-full w-[3px] rounded-r-full bg-gradient-to-b from-[#FFF3E8] to-[#EF3D86]" />
                 )}
-                <Icon size={18} />
-                <span>{label}</span>
+
+                <Icon
+                  size={18}
+                  strokeWidth={isActive ? 2.5 : 2}
+                  stroke={isActive ? "url(#menuGradient)" : "currentColor"}
+                  className={!isActive ? "text-white/80" : ""}
+                />
+
+                <span className={isActive ? "gradient-text text-semibold" : ""}>
+                  {label}
+                </span>
               </>
             )}
           </NavLink>
@@ -130,16 +166,14 @@ const Sidebar = ({ closeSidebar }) => {
             </div>
 
             <div>
-              <p className="text-xs font-semibold">
+              <p className="text-xs font-semibold text-white">
                 Admin User
               </p>
             </div>
 
           </div>
 
-          <button
-            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold"
-          >
+          <button className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white">
             Logout
           </button>
 
@@ -150,10 +184,11 @@ const Sidebar = ({ closeSidebar }) => {
       {/* Mobile Close */}
       <button
         onClick={closeSidebar}
-        className="absolute top-4 right-4 md:hidden text-gray-400 hover:text-white"
+        className="absolute top-4 right-4 md:hidden text-white hover:text-gray-300"
       >
         <X size={20} />
       </button>
+
     </div>
   );
 };

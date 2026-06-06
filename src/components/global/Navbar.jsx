@@ -26,7 +26,7 @@ const Navbar = ({ setSidebarOpen }) => {
 };
   const title = switchTitlte[location.pathname] || "Dashboard";
   return (
-    <header className="py-5  bg-[#FFFFFF] flex items-center justify-between px-6">
+    <header className="py-5  bg-[#FFFFFF] flex items-center justify-between px-4">
 
       {/* Left */}
       <div className="flex items-center gap-4">
@@ -34,7 +34,7 @@ const Navbar = ({ setSidebarOpen }) => {
         {/* Mobile Sidebar Toggle */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="md:hidden text-gray-400 hover:text-white transition"
+          className="md:hidden text-black hover:text-gray-700 transition"
         >
           <Menu size={22} />
         </button>

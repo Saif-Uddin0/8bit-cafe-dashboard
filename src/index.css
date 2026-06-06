@@ -1,2 +1,10 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(to bottom, #6C04D7, #CD4ECD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
