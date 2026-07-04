@@ -1,6 +1,7 @@
 import React from "react";
 import { Menu } from "lucide-react";
 import { Link, useLocation } from "react-router";
+import avatar from "../../assets/error.png"
 
 
 
@@ -13,14 +14,16 @@ const Navbar = ({ setSidebarOpen }) => {
 
   // dynamic title
   const switchTitlte = {
-    '/': 'Dashboard',
-    '/conversation': 'Conversation',
-    '/leads': 'Leads',
-    '/agent-manage': 'Agent Manage',
-    '/admin-manage': 'Admin Manage',
-    '/profile': 'Profile',
-  };
-
+  '/': 'Dashboard',
+  '/game-management': 'Game Management',
+  '/category': 'Category',
+  '/leads': 'Leads',
+  '/food-management': 'Food Management',
+  '/schedule': 'Schedule',
+  '/booking': 'Booking',
+  '/sub-admin': 'Sub Admin Management',
+  '/setting': 'Admin Settings',
+};
   const title = switchTitlte[location.pathname] || "Dashboard";
   return (
     <header className="py-5 border-b border-[#1F1F1F] bg-[#0B0B0B] flex items-center justify-between px-6">
@@ -45,10 +48,10 @@ const Navbar = ({ setSidebarOpen }) => {
 
       {/* Right User */}
 
-      {!loading && (
+      
         <div className="flex items-center gap-3">
 
-          <Link to={'/profile'}>
+          <Link>
             <img
               src={avatar}
               alt="profile"
@@ -58,16 +61,15 @@ const Navbar = ({ setSidebarOpen }) => {
 
           <div className="hidden sm:flex flex-col leading-tight">
             <span className="text-sm font-medium text-white">
-              {profile?.name}
+              mahir
             </span>
 
             <span className="text-xs text-gray-400">
-              {profile?.role}
+              admin
             </span>
           </div>
 
         </div>
-      )}
 
     </header>
   );

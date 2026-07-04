@@ -1,18 +1,21 @@
 import { createBrowserRouter } from "react-router";
 import Root from "../layout/Root";
-import Dashboard from "../pages/Dashboard";
-import Conversations from "../pages/Conversations";
-import Leads from "../pages/Leads";
+import ErrorPage from "../components/global/ErrorPage";
+import Home from "../pages/dashboard/Home";
+import Leads from "../pages/dashboard/Leads";
+import Category from "../pages/dashboard/Category";
+import GameManagement from "../pages/dashboard/GameManagement";
+import FoodManagement from "../pages/dashboard/FoodManagement";
+import Schedule from "../pages/dashboard/Schedule";
+import Booking from "../pages/dashboard/Booking";
+import SubAdmin from "../pages/dashboard/SubAdmin";
+import Settings from "../pages/dashboard/Settings";
 import Auth from "../layout/Auth";
-import Login from "../pages/Authintication/Login";
-import ForgetPassword from "../pages/Authintication/ForgetPassword";
-import Otp from "../pages/Authintication/Otp";
-import SetPassword from "../pages/Authintication/SetPassword";
-import PasswordSuccessfull from "../pages/Authintication/PasswordSuccessfull";
-import AgentManage from "../pages/AgentManage";
-import AdminManage from "../pages/AdminManage";
-import Profile from "../pages/Profile";
-import ErrorPage from "../components/ErrorPage";
+import Login from "../pages/authentications/Login";
+import ForgetPassword from "../pages/authentications/ForgetPassword";
+import Otp from "../pages/authentications/Otp";
+import SetPassword from "../pages/authentications/SetPassword";
+
 export const router = createBrowserRouter([
     {
         path: "/",
@@ -22,27 +25,39 @@ export const router = createBrowserRouter([
 
             {
                 index: true,
-                element: <Dashboard></Dashboard>
+                element: <Home></Home>
             },
             {
-                path: "agent-Manage",
-                element: <AgentManage></AgentManage>
+                path: "game-management",
+                element: <GameManagement></GameManagement>
             },
             {
-                path: "conversation",
-                element: <Conversations></Conversations>
+                path: "category",
+                element: <Category></Category>
             },
             {
                 path: "leads",
                 element: <Leads></Leads>
             },
             {
-                path: "admin-manage",
-                element: <AdminManage></AdminManage>
+                path: "food-management",
+                element: <FoodManagement></FoodManagement>
             },
             {
-                path: "profile",
-                element: <Profile></Profile>
+                path: "schedule",
+                element: <Schedule></Schedule>
+            },
+            {
+                path: "booking",
+                element: <Booking></Booking>
+            },
+            {
+                path: "sub-admin",
+                element: <SubAdmin></SubAdmin>
+            },
+            {
+                path: "setting",
+                element: <Settings></Settings>
             },
 
         ]
@@ -55,7 +70,6 @@ export const router = createBrowserRouter([
           { path: "forget-password", element: <ForgetPassword></ForgetPassword> },
           { path: "otp", element: <Otp></Otp> },
           { path: "set-password", element: <SetPassword></SetPassword> },
-          { path: "password-successfull", element: <PasswordSuccessfull></PasswordSuccessfull> },
         ],
       },
 ]);
