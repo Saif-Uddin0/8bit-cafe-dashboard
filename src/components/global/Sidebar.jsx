@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink } from "react-router";
-import logo from "../assets/vector.png";
+import logo from "../../assets/hero.png"
 import {
   LayoutDashboard,
   Gamepad2,
@@ -19,7 +19,7 @@ import {
 const menuItems = [
   {
     path: "/",
-    label: "Dashboard",
+    label: "Home",
     icon: LayoutDashboard,
   },
   {
@@ -66,27 +66,36 @@ const menuItems = [
 
 const Sidebar = ({ closeSidebar }) => {
   const linkClass = ({ isActive }) =>
-    `relative flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all ${
-      isActive
-        ? "text-[#00CE51] bg-gradient-to-r from-[#00CE51]/20 to-transparent"
-        : "text-gray-400 hover:bg-[#1A1A1A] hover:text-white"
+    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all font-medium ${isActive
+      ? "bg-white text-[#532C89]"
+      : "text-white/80 hover:bg-white/10 hover:text-white"
     }`;
 
   return (
-    <div className="flex flex-col h-full bg-[#0B0B0B] border-r border-[#1F1F1F] overflow-y-auto">
+    <div className="flex flex-col h-full bg-[#532C89] overflow-y-auto">
 
       {/* Logo */}
-      <Link to="/" className="flex flex-col items-center py-5">
-        <div className="flex items-center gap-2 text-white">
-          <img src={logo} alt="logo" className="w-8 h-8" />
-          <h1 className="text-3xl font-semibold">LoGo</h1>
+      <Link
+        to="/"
+        className="flex flex-col items-center pt-8 pb-6"
+      >
+        <img
+          src={logo}
+          className="w-16 h-16 rounded-xl"
+          alt=""
+        />
+
+        <div className="mt-3 bg-white rounded-full px-8 py-1">
+          <p className="text-[#532C89] text-sm font-semibold">
+            Admin
+          </p>
         </div>
       </Link>
 
-      <div className="border-t border-[#1F1F1F] mb-6"></div>
+      <div className="my-4 border-t border-[#1F1F1F"></div>
 
       {/* Navigation */}
-      <nav className="flex flex-col gap-2 pr-4">
+      <nav className="flex flex-col gap-1 px-3">
         {menuItems.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
@@ -108,33 +117,34 @@ const Sidebar = ({ closeSidebar }) => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="mt-auto pb-10">
+      <div className="mt-auto px-3 pb-6">
 
-        <NavLink
-          to="/setting"
-          className={linkClass}
-          onClick={closeSidebar}
-        >
-          {({ isActive }) => (
-            <>
-              {isActive && (
-                <span className="absolute left-0 top-0 h-full w-[5px] bg-[#00CE51] rounded-r" />
-              )}
-              <User size={18} />
-              Profile
-            </>
-          )}
-        </NavLink>
+        <div className="border-t border-white/20 mb-4"></div>
 
-        <div className="border-t border-[#1F1F1F] my-4"></div>
+        <div className="flex items-center justify-between">
 
-        <Link
-          to="/auth/login"
-          className="flex items-center gap-3 text-green-400 hover:text-green-500 text-sm transition px-5"
-        >
-          <LogIn size={18} />
-          Login
-        </Link>
+          <div className="flex items-center gap-2">
+
+            <div className="w-8 h-8 rounded-full bg-white text-[#532C89] flex items-center justify-center text-xs font-bold">
+              AD
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold">
+                Admin User
+              </p>
+            </div>
+
+          </div>
+
+          <button
+            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold"
+          >
+            Logout
+          </button>
+
+        </div>
+
       </div>
 
       {/* Mobile Close */}

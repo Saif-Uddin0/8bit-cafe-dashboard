@@ -26,7 +26,7 @@ const Navbar = ({ setSidebarOpen }) => {
 };
   const title = switchTitlte[location.pathname] || "Dashboard";
   return (
-    <header className="py-5 border-b border-[#1F1F1F] bg-[#0B0B0B] flex items-center justify-between px-6">
+    <header className="py-5  bg-[#FFFFFF] flex items-center justify-between px-6">
 
       {/* Left */}
       <div className="flex items-center gap-4">
@@ -40,36 +40,12 @@ const Navbar = ({ setSidebarOpen }) => {
         </button>
 
         {/* Page Title */}
-        <h1 className="text-lg md:text-2xl font-semibold text-white">
+        <h1 className="text-lg md:text-2xl font-semibold text-black">
           {title}
         </h1>
 
       </div>
 
-      {/* Right User */}
-
-      
-        <div className="flex items-center gap-3">
-
-          <Link>
-            <img
-              src={avatar}
-              alt="profile"
-              className="w-9 h-9 rounded-full object-cover"
-            />
-          </Link>
-
-          <div className="hidden sm:flex flex-col leading-tight">
-            <span className="text-sm font-medium text-white">
-              mahir
-            </span>
-
-            <span className="text-xs text-gray-400">
-              admin
-            </span>
-          </div>
-
-        </div>
 
     </header>
   );

@@ -1,7 +1,8 @@
 import{ useState } from "react";
 import {  Outlet } from "react-router";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/global/Sidebar";
+import Navbar from "../components/global/Navbar";
+
 
 
 const Root = () => {
@@ -21,10 +22,10 @@ const Root = () => {
 
   return (
 
-    <div className="flex min-h-screen bg-[#0B0B0B] text-white relative">
+    <div className="flex min-h-screen bg-[#F7F7FA] text-white relative">
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-[260px] border-r border-[#2A2A2A] h-screen sticky top-0">
+      <aside className="hidden md:flex w-[260px] border-r border-[#FFFFFF] h-screen sticky top-0">
         <Sidebar />
       </aside>
 
@@ -39,7 +40,7 @@ const Root = () => {
           />
 
           {/* Sidebar */}
-          <div className="absolute left-0 top-0 h-full w-[260px] bg-[#0B0B0B] border-r border-[#2A2A2A]">
+          <div className="absolute left-0 top-0 h-full w-[260px] bg-[#FFFFFF] border-r border-[#2A2A2A]">
 
             <Sidebar closeSidebar={() => setSidebarOpen(false)} />
 
@@ -53,7 +54,7 @@ const Root = () => {
 
         <Navbar setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 p-6 bg-[#0B0B0B] min-h-[calc(100vh-80px)]">
+        <main className="flex-1 p-6 bg-[#FFFFFF] min-h-[calc(100vh-80px)]">
           <Outlet />
         </main>
 
