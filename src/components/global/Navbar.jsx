@@ -1,7 +1,6 @@
 import React from "react";
 import { Menu } from "lucide-react";
-import { Link, useLocation } from "react-router";
-import avatar from "../../assets/error.png"
+import {  useLocation } from "react-router";
 
 
 
