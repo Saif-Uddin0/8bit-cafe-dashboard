@@ -31,7 +31,7 @@ const Navbar = ({ setSidebarOpen }) => {
       {/* Left */}
       <div className="flex items-center gap-4">
 
-        {/* Mobile Sidebar Toggle */}
+        {/* Mobile Sidebar */}
         <button
           onClick={() => setSidebarOpen(true)}
           className="md:hidden text-black hover:text-gray-700 transition"
