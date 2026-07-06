@@ -62,6 +62,7 @@ export const router = createBrowserRouter([
 
         ]
     },
+    //  authentication routes
     {
         path: "auth",
         element: <Auth></Auth>,
