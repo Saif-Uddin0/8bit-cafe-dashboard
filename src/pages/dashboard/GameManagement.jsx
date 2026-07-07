@@ -6,11 +6,11 @@ import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 
 // Seed games data based on the Figma screenshot
 const INITIAL_GAMES = [
-  { id: 1, name: "Pool", duration: "30 Minutes", price: "100 tk", status: "Available" },
-  { id: 2, name: "Fifa 26", duration: "30 Minutes", price: "100 tk", status: "Available" },
-  { id: 3, name: "Fifa 26", duration: "30 Minutes", price: "100 tk", status: "Available" },
-  { id: 4, name: "Fifa 26", duration: "30 Minutes", price: "100 tk", status: "Un-available" },
-  { id: 5, name: "Fifa 26", duration: "30 Minutes", price: "100 tk", status: "Available" },
+  { id: 1, name: "Pool", category: "Games", duration: "30 Minutes", price: "100 tk", status: "Available" },
+  { id: 2, name: "Fifa 26", category: "Games", duration: "30 Minutes", price: "100 tk", status: "Available" },
+  { id: 3, name: "Fifa 26", category: "Games", duration: "30 Minutes", price: "100 tk", status: "Available" },
+  { id: 4, name: "Fifa 26", category: "Games", duration: "30 Minutes", price: "100 tk", status: "Un-available" },
+  { id: 5, name: "Fifa 26", category: "Games", duration: "30 Minutes", price: "100 tk", status: "Available" },
 ];
 
 const GameManagement = () => {
@@ -18,9 +18,10 @@ const GameManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Filter games based on name search
+  // Filter games based on Name or Category search
   const filteredGames = games.filter((game) =>
-    game.name.toLowerCase().includes(searchTerm.toLowerCase())
+    game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (game.category && game.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Handle adding a new game
@@ -54,14 +55,14 @@ const GameManagement = () => {
 
           {/* Search bar & filter icon wrapper */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-72">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
                 <Search size={16} />
               </span>
               <input
                 id="game-search"
                 type="text"
-                placeholder="Search"
+                placeholder="Search by name or category"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
