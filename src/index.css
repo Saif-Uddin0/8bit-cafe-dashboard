@@ -28,3 +28,42 @@
     scrollbar-width: none; /* Firefox */
   }
 }
+
+/* Always-visible horizontal scrollbar for the leads table — mobile only */
+@media (max-width: 767px) {
+  .table-scroll::-webkit-scrollbar {
+    height: 5px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: #F1F5F9;
+    border-radius: 99px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 99px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+}
+
+/* Hide scrollbar on desktop/large screens */
+@media (min-width: 768px) {
+  .table-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .table-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* Swipe hint bounce animation — mobile table scroll indicator */
+@keyframes swipe-bounce {
+  0%, 100% { transform: translateX(0) translateY(-50%); }
+  40%       { transform: translateX(-5px) translateY(-50%); }
+  60%       { transform: translateX(3px) translateY(-50%); }
+}
+.swipe-hint {
+  animation: swipe-bounce 1.6s ease-in-out infinite;
+}
