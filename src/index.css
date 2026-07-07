@@ -8,3 +8,23 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar on medium devices and up */
+@media (min-width: 768px) {
+  .md\:no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .md\:no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}

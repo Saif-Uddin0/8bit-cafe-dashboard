@@ -18,10 +18,10 @@ const TransactionsList = () => {
         {transactions.map((tx, index) => (
           <div key={index} className="flex justify-between items-center py-3 first:pt-0 last:pb-0 hover:bg-gray-50/30 transition-colors">
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">
+              <span className="text-sm md:text-md font-semibold text-gray-800">
                 {tx.method}
               </span>
-              <span className="text-xs text-gray-400 mt-0.5">
+              <span className="text-xs text-black mt-0.5">
                 {tx.detail} <span className="ml-1 text-[11px] text-gray-400/80">{tx.time}</span>
               </span>
             </div>

@@ -13,11 +13,11 @@ import { ChevronDown } from "lucide-react";
 // Mock datasets for the periods
 const dataSets = {
   thisMonth: [
-    { name: "Jan", growth: 380 },
+    { name: "Jan", growth: 390 },
     { name: "mar", growth: 420 },
-    { name: "may", growth: 520 },
-    { name: "jul", growth: 510 },
-    { name: "aug", growth: 540 },
+    { name: "may", growth: 530 },
+    { name: "jul", growth: 530 },
+    { name: "aug", growth: 550 },
     { name: "oct", growth: 630 },
     { name: "dec", growth: 660 },
   ],
@@ -70,7 +70,7 @@ const PaymentGrowthChart = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-gray-800">Payment Growth</h2>
-        
+
         {/* Dropdown Menu */}
         <div className="relative">
           <button
@@ -85,25 +85,22 @@ const PaymentGrowthChart = () => {
             <div className="absolute right-0 mt-1.5 w-32 bg-white border border-gray-150 rounded-xl shadow-lg z-20 py-1">
               <button
                 onClick={() => handlePeriodChange("thisMonth")}
-                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
-                  period === "thisMonth" ? "text-[#532C89] font-bold" : "text-gray-600"
-                }`}
+                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${period === "thisMonth" ? "text-[#532C89] font-bold" : "text-gray-600"
+                  }`}
               >
                 This Month
               </button>
               <button
                 onClick={() => handlePeriodChange("lastMonth")}
-                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
-                  period === "lastMonth" ? "text-[#532C89] font-bold" : "text-gray-600"
-                }`}
+                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${period === "lastMonth" ? "text-[#532C89] font-bold" : "text-gray-600"
+                  }`}
               >
                 Last Month
               </button>
               <button
                 onClick={() => handlePeriodChange("thisYear")}
-                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
-                  period === "thisYear" ? "text-[#532C89] font-bold" : "text-gray-600"
-                }`}
+                className={`w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${period === "thisYear" ? "text-[#532C89] font-bold" : "text-gray-600"
+                  }`}
               >
                 This Year
               </button>
@@ -121,11 +118,11 @@ const PaymentGrowthChart = () => {
           >
             <defs>
               <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                <stop offset="0%" stopColor="#25CD25" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="#25CD25" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+            <CartesianGrid stroke="#EBEFF3" strokeWidth={0.5} strokeDasharray="0" />
             <XAxis
               dataKey="name"
               axisLine={false}
@@ -153,12 +150,11 @@ const PaymentGrowthChart = () => {
               itemStyle={{ color: "#10B981", fontWeight: 600 }}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="growth"
-              stroke="#10B981"
-              strokeWidth={2}
-              strokeDasharray="4 4"
-              fillOpacity={1}
+              stroke="#25CD25"
+              strokeWidth={1.07} 
+              strokeDasharray="3 3"
               fill="url(#colorGrowth)"
             />
           </AreaChart>

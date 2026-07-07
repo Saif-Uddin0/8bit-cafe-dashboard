@@ -39,7 +39,7 @@ const Root = () => {
         <Navbar setSidebarOpen={setSidebarOpen} />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto px-6 py-5 bg-white text-black">
+        <main className="flex-1 overflow-y-auto md:no-scrollbar px-6 py-5 bg-white text-black">
           <Outlet />
         </main>
 

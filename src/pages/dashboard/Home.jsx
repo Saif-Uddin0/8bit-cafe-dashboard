@@ -7,7 +7,7 @@ import PaymentGrowthChart from "../../components/home/PaymentGrowthChart";
 
 const Home = () => {
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-8">
+    <div className="space-y-6 max-w-[1600px] mx-auto px-2 md:px-4 mt-2 pb-8">
       {/* Row 1: Stat Cards */}
       <div>
         <StatCards />

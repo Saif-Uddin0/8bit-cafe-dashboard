@@ -28,7 +28,7 @@ const Navbar = ({ setSidebarOpen }) => {
     <header className="py-5  bg-[#FFFFFF] flex items-center justify-between px-4">
 
       {/* Left */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 px-2 md:px-5">
 
         {/* mobile Sidebar */}
         <button
@@ -39,7 +39,7 @@ const Navbar = ({ setSidebarOpen }) => {
         </button>
 
         {/* Page Title */}
-        <h1 className="text-lg md:text-2xl font-semibold text-black">
+        <h1 className="text-lg md:text-4xl font-semibold text-black">
           {title}
         </h1>
 
