@@ -153,7 +153,7 @@ const PaymentGrowthChart = () => {
               type="linear"
               dataKey="growth"
               stroke="#25CD25"
-              strokeWidth={1.07} 
+              strokeWidth={1.07}
               strokeDasharray="3 3"
               fill="url(#colorGrowth)"
             />

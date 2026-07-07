@@ -6,6 +6,7 @@ const TodaysBookingsTable = () => {
     { customer: "Amara Osei", service: "Food", payment: "200 Tk", time: "10.00 am" },
     { customer: "Amara Osei", service: "Fifa26", payment: "200 Tk", time: "10.00 am" },
     { customer: "Amara Osei", service: "Food", payment: "200 Tk", time: "10.00 am" },
+    { customer: "Amara Osei", service: "Food", payment: "200 Tk", time: "10.00 am" },
   ];
 
   return (

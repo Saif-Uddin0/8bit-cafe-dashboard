@@ -1,8 +1,8 @@
 import React from "react";
 import StatCards from "../../components/home/StatCards";
-import AllGamesTable from "../../components/home/AllGamesTable";
-import TransactionsList from "../../components/home/TransactionsList";
 import TodaysBookingsTable from "../../components/home/TodaysBookingsTable";
+import TransactionsList from "../../components/home/TransactionsList";
+import AllPayments from "../../components/home/AllPayments";
 import PaymentGrowthChart from "../../components/home/PaymentGrowthChart";
 
 const Home = () => {
@@ -13,27 +13,23 @@ const Home = () => {
         <StatCards />
       </div>
 
-      {/* Row 2: All Games (Left) & Transactions (Right) */}
+      {/* Row 2: Todays Bookings (Left) & Transactions (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-stretch">
-          <AllGamesTable />
+          <TodaysBookingsTable />
         </div>
         <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-stretch">
           <TransactionsList />
         </div>
       </div>
 
-      {/* Row 3: Todays Bookings (Left) & Payment Growth (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-stretch">
-          <TodaysBookingsTable />
-        </div>
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-stretch">
-          <PaymentGrowthChart />
-        </div>
+      {/* Row 3: All Payments (Left) & Payment Growth (Right) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <AllPayments />
+        <PaymentGrowthChart />
       </div>
     </div>
-  );
+  )
 };
 
 export default Home;

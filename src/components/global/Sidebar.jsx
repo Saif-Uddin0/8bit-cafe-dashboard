@@ -68,12 +68,13 @@ const Sidebar = ({ closeSidebar }) => {
     overflow-hidden
     flex
     items-center
-    gap-3
-    h-[44px]
-    px-4
+    gap-2.5 md:gap-3
+    h-[38px] md:h-[44px]
+    px-3 md:px-4
     rounded-xl
     transition-all
     font-medium
+    text-xs md:text-sm
     ${isActive
       ? "bg-white"
       : "text-white/80 hover:bg-white/10 hover:text-white"
@@ -83,15 +84,7 @@ const Sidebar = ({ closeSidebar }) => {
   return (
     <div className="relative flex flex-col h-full bg-[#532C89] overflow-y-auto no-scrollbar">
 
-      {/* SVG Gradient for Icons */}
-      <svg width="0" height="0" className="absolute">
-        <defs>
-          <linearGradient id="menuGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6C04D7" />
-            <stop offset="100%" stopColor="#CD4ECD" />
-          </linearGradient>
-        </defs>
-      </svg>
+
 
       {/* Logo */}
       <Link
