@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router";
 import logo from "../../assets/logo-dash.png";
 import {
   House,
@@ -63,6 +63,11 @@ const menuItems = [
 ];
 
 const Sidebar = ({ closeSidebar }) => {
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    // TODO: clear auth tokens/session here
+    navigate("/auth/login");
+  };
   const linkClass = ({ isActive }) => `
     relative
     overflow-hidden
@@ -166,8 +171,11 @@ const Sidebar = ({ closeSidebar }) => {
 
           </div>
 
-          <button className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white">
-            Logout
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white transition-colors"
+          >
+            Login
           </button>
 
         </div>
