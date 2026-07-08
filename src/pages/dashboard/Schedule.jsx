@@ -30,20 +30,20 @@ const getBookingsForDate = () => {
   return {
     [key("pool_1", "09:00 AM")]: { name: "John Smith", phone: "012345678912" },
     [key("fifa_3", "09:00 AM")]: { name: "John Smith", phone: "012345678912" },
-    
+
     [key("fifa_1", "10:00 AM")]: { name: "John Smith", phone: "012345678912" },
     [key("fifa_2", "10:00 AM")]: { name: "John Smith", phone: "012345678912" },
     [key("fifa_3", "10:00 AM")]: { name: "John Smith", phone: "012345678912" },
     [key("fifa_4", "10:00 AM")]: { name: "John Smith", phone: "012345678912" },
-    
+
     [key("fifa_1", "11:00 AM")]: { name: "John Smith", phone: "012345678912" },
-    
+
     [key("pool_1", "12:00 PM")]: { name: "John Smith", phone: "012345678912" },
     [key("fifa_2", "12:00 PM")]: { name: "John Smith", phone: "012345678913" },
     [key("fifa_4", "12:00 PM")]: { name: "John Smith", phone: "012345678912" },
-    
+
     [key("fifa_4", "01:00 PM")]: { name: "John Smith", phone: "012345678912" },
-    
+
     [key("fifa_2", "02:00 PM")]: { name: "John Smith", phone: "012345678912" },
   };
 };
@@ -69,7 +69,6 @@ const BookingCard = ({ booking, bgClass }) => (
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
 // MAIN SCHEDULE COMPONENT
 const Schedule = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -91,7 +90,7 @@ const Schedule = () => {
     <div className="w-full max-w-[1600px] mx-auto pb-8 mt-2 px-2 md:px-4">
       {/* Card Wrapper */}
       <div className="bg-white border border-gray-200/80 rounded-[16px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        
+
         {/* Header containing title and navigation */}
         <div className="flex items-center justify-between mb-6">
           <div>
