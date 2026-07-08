@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Amara Osei",
+    "role": "Super Admin",
+    "email": "amara.osei@gmail.com",
+    "status": "Active",
+    "image": "https://i.pravatar.cc/150?img=11"
+  },
+  {
+    "id": 2,
+    "name": "John Smith",
+    "role": "Sub Admin",
+    "email": "john.smith@gmail.com",
+    "status": "Active",
+    "image": null
+  },
+  {
+    "id": 3,
+    "name": "Sarah Connor",
+    "role": "Sub Admin",
+    "email": "sarah.c@gmail.com",
+    "status": "Active",
+    "image": "https://i.pravatar.cc/150?img=5"
+  },
+  {
+    "id": 4,
+    "name": "David Miller",
+    "role": "Sub Admin",
+    "email": "david.m@gmail.com",
+    "status": "In-active",
+    "image": "https://i.pravatar.cc/150?img=13"
+  },
+  {
+    "id": 5,
+    "name": "Emily Davis",
+    "role": "Sub Admin",
+    "email": "emily.d@gmail.com",
+    "status": "Active",
+    "image": "https://i.pravatar.cc/150?img=47"
+  },
+  {
+    "id": 6,
+    "name": "Michael Brown",
+    "role": "Sub Admin",
+    "email": "michael.b@gmail.com",
+    "status": "Active",
+    "image": "https://i.pravatar.cc/150?img=15"
+  },
+  {
+    "id": 7,
+    "name": "Jessica Taylor",
+    "role": "Sub Admin",
+    "email": "jessica.t@gmail.com",
+    "status": "In-active",
+    "image": "https://i.pravatar.cc/150?img=49"
+  }
+]
