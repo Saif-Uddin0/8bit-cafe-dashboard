@@ -8,15 +8,7 @@ import AddSubAdminModal from "../../components/subadmin/AddSubAdminModal";
 const SubAdmin = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch sub-admins data using TanStack Query + Axios
-  // To connect a real API, just replace "/sub-admins.json" with your endpoint
-  const {
-    data: admins = [],
-    refetch,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: admins = [], refetch, isLoading, isError, error } = useQuery({
     queryKey: ["admins"],
     queryFn: async () => {
       const res = await axios.get("/sub-admins.json");
@@ -24,50 +16,40 @@ const SubAdmin = () => {
     },
   });
 
-  // Handles new sub-admin submission from modal form
   const handleAddSubAdmin = (formData) => {
-    console.log("New Sub-Admin submitted:", formData);
-    // TODO: Replace with real API call e.g. await axiosSecure.post("/auth/users/", formData)
-    // Then call refetch() to update the list
+    console.log("New Sub-Admin:", formData);
+    // TODO: await axiosSecure.post("/auth/users/", formData); then refetch()
     refetch();
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto px-2 md:px-4 mt-2 pb-8">
-      {/* Page Header Row */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-[1600px] mx-auto p-2 md:p-5 mt-2 pb-8 border border-gray-200 rounded-xl shadow-xs">
 
-        {/* Add Sub-Admin Button — opens the modal */}
+      {/* Add Sub-Admin button — right-aligned, title is shown in the Navbar */}
+      <div className="flex justify-end">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
         >
           <Plus size={16} />
           Add Sub-Admin
         </button>
       </div>
 
-      {/* Conditional rendering for loading, error, or data states */}
+      {/* Loading / error / table */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16 space-y-4">
-          <div className="w-12 h-12 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 font-semibold text-sm">
-            Loading admins data...
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-10 h-10 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Loading admins...</p>
         </div>
       ) : isError ? (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl">
-          <p className="font-semibold">
-            Failed to load admins:{" "}
-            {error?.message || "Unknown error occurred"}
-          </p>
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm">
+          Failed to load: {error?.message}
         </div>
       ) : (
-        /* Admin list table */
         <SubAdminTable admins={admins} />
       )}
 
-      {/* Add Sub-Admin Modal — controlled by isModalOpen state */}
       <AddSubAdminModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
