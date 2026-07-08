@@ -1,0 +1,49 @@
+{
+  "stats": [
+    { "title": "TOTAL BOOKINGS", "value": "696",        "bgColor": "bg-[#234EB71A]", "icon": "CalendarCheck2" },
+    { "title": "TOTAL REVENUE",  "value": "950,380 Tk", "bgColor": "bg-[#FEF5E7]",  "icon": "Wallet" },
+    { "title": "TOTAL GAMES",    "value": "6",           "bgColor": "bg-[#7744B31A]", "icon": "Gamepad2" },
+    { "title": "TOTAL FOODS",    "value": "69",          "bgColor": "bg-[#7744B31A]", "icon": "CupSoda" }
+  ],
+  "todaysBookings": [
+    { "id": 1, "customer": "Amara Osei",   "service": "Fifa26", "payment": "200 Tk", "time": "10.00 am" },
+    { "id": 2, "customer": "John Smith",   "service": "Food",   "payment": "150 Tk", "time": "11.00 am" },
+    { "id": 3, "customer": "Sarah Connor", "service": "Fifa26", "payment": "200 Tk", "time": "01.00 pm" },
+    { "id": 4, "customer": "David Miller", "service": "Food",   "payment": "80 Tk",  "time": "02.30 pm" },
+    { "id": 5, "customer": "Emily Davis",  "service": "Pool",   "payment": "300 Tk", "time": "04.00 pm" }
+  ],
+  "transactions": [
+    { "id": 1, "method": "Bkash",  "detail": "Fifa26 - Amara Osei",   "time": "9:30 AM",  "amount": "200 Tk" },
+    { "id": 2, "method": "Nagad",  "detail": "Food - John Smith",      "time": "10:00 AM", "amount": "150 Tk" },
+    { "id": 3, "method": "Card",   "detail": "Pool - Sarah Connor",    "time": "11:15 AM", "amount": "300 Tk" },
+    { "id": 4, "method": "Bkash",  "detail": "Fifa26 - David Miller",  "time": "12:00 PM", "amount": "200 Tk" },
+    { "id": 5, "method": "Nagad",  "detail": "Food - Emily Davis",     "time": "01:30 PM", "amount": "80 Tk"  },
+    { "id": 6, "method": "Card",   "detail": "Fifa26 - James Wilson",  "time": "02:45 PM", "amount": "200 Tk" },
+    { "id": 7, "method": "Bkash",  "detail": "Pool - Michael Brown",   "time": "04:00 PM", "amount": "300 Tk" }
+  ],
+  "paymentGrowth": {
+    "thisMonth": [
+      { "name": "Jan", "growth": 390 }, { "name": "Mar", "growth": 420 },
+      { "name": "May", "growth": 530 }, { "name": "Jul", "growth": 530 },
+      { "name": "Aug", "growth": 550 }, { "name": "Oct", "growth": 630 },
+      { "name": "Dec", "growth": 660 }
+    ],
+    "lastMonth": [
+      { "name": "Jan", "growth": 250 }, { "name": "Mar", "growth": 310 },
+      { "name": "May", "growth": 450 }, { "name": "Jul", "growth": 400 },
+      { "name": "Aug", "growth": 490 }, { "name": "Oct", "growth": 520 },
+      { "name": "Dec", "growth": 590 }
+    ],
+    "thisYear": [
+      { "name": "Jan", "growth": 450 }, { "name": "Mar", "growth": 510 },
+      { "name": "May", "growth": 600 }, { "name": "Jul", "growth": 580 },
+      { "name": "Aug", "growth": 640 }, { "name": "Oct", "growth": 710 },
+      { "name": "Dec", "growth": 750 }
+    ]
+  },
+  "allPayments": [
+    { "name": "Bkash", "value": 43, "color": "#4F8AFF" },
+    { "name": "Nagad",  "value": 37, "color": "#FF7F5C" },
+    { "name": "Card",  "value": 20, "color": "#FFD15C" }
+  ]
+}

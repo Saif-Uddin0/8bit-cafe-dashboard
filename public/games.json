@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Pool", "category": "Games", "duration": "30 Minutes", "price": "100 tk", "status": "Available" },
+  { "id": 2, "name": "Fifa 26", "category": "Games", "duration": "30 Minutes", "price": "100 tk", "status": "Available" },
+  { "id": 3, "name": "Fifa 26", "category": "Games", "duration": "30 Minutes", "price": "100 tk", "status": "Available" },
+  { "id": 4, "name": "Fifa 26", "category": "Games", "duration": "30 Minutes", "price": "100 tk", "status": "Un-available" },
+  { "id": 5, "name": "Fifa 26", "category": "Games", "duration": "30 Minutes", "price": "100 tk", "status": "Available" }
+]

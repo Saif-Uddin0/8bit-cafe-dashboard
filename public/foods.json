@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Burger", "category": "Snacks", "deliveryTime": "30 Minutes", "deliveryFee": "30 Tk", "price": "100 tk", "description": "Complete grooming package", "status": "Available" },
+  { "id": 2, "name": "Burger", "category": "Snacks", "deliveryTime": "30 Minutes", "deliveryFee": "30 Tk", "price": "100 tk", "description": "Complete grooming package", "status": "Available" },
+  { "id": 3, "name": "Burger", "category": "Snacks", "deliveryTime": "30 Minutes", "deliveryFee": "30 Tk", "price": "100 tk", "description": "Complete grooming package", "status": "Available" },
+  { "id": 4, "name": "Burger", "category": "Snacks", "deliveryTime": "30 Minutes", "deliveryFee": "30 Tk", "price": "100 tk", "description": "Complete grooming package", "status": "Un-available" },
+  { "id": 5, "name": "Burger", "category": "Snacks", "deliveryTime": "30 Minutes", "deliveryFee": "30 Tk", "price": "100 tk", "description": "Complete grooming package", "status": "Available" }
+]

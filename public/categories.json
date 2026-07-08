@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Snacks", "type": "Food", "status": "Available" },
+  { "id": 2, "name": "FIFA 26", "type": "Games", "status": "Available" },
+  { "id": 3, "name": "Drinks", "type": "Food", "status": "Available" },
+  { "id": 4, "name": "Snacks", "type": "Food", "status": "Un-available" },
+  { "id": 5, "name": "Snacks", "type": "Food", "status": "Available" }
+]

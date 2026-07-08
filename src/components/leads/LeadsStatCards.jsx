@@ -1,27 +1,31 @@
 import React from "react";
 import { Users, Gamepad2, CupSoda } from "lucide-react";
 
-const LeadsStatCards = () => {
+const LeadsStatCards = ({ leads = [] }) => {
+  const totalLeads = leads.length;
+  const gameLeads = leads.filter((l) => l.source === "Game").length;
+  const foodLeads = leads.filter((l) => l.source === "Food").length;
+
   const stats = [
     {
       title: "TOTAL LEADS",
-      value: "145",
+      value: totalLeads,
       icon: Users,
-      bgColor: "bg-[#234EB71A]", // Light blue-purple
+      bgColor: "bg-[#234EB71A]",
       iconColor: "text-black",
     },
     {
       title: "GAME LEADS",
-      value: "10",
+      value: gameLeads,
       icon: Gamepad2,
-      bgColor: "bg-[#FEF5E7]", // Light gold-peach
+      bgColor: "bg-[#FEF5E7]",
       iconColor: "text-black",
     },
     {
       title: "FOOD LEADS",
-      value: "7",
-      icon: CupSoda, // juice-burger style icon
-      bgColor: "bg-[#7744B31A]", // Light purple-pink
+      value: foodLeads,
+      icon: CupSoda,
+      bgColor: "bg-[#7744B31A]",
       iconColor: "text-black",
     },
   ];
