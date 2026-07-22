@@ -1,35 +1,64 @@
-import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, MoreVertical } from "lucide-react";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import CategoryStatCards from "../../components/category/CategoryStatCards";
 import CreateCategoryModal from "../../components/category/CreateCategoryModal";
+import useAxiosSecure from "../../hooks/useAxios";
+import { toast } from "react-hot-toast";
 
 const Category = () => {
-  const queryClient = useQueryClient();
+  const axiosSecure = useAxiosSecure();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // TanStack Query to fetch category data
-  const { data: categories = [], isLoading, isError } = useQuery({
+  const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await axios.get("/categories.json");
+      const res = await axiosSecure.get("/api/category/getCategories");
       return res.data;
     },
   });
 
+
+  const categories = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data?.data)
+      ? data.data.data
+      : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.categories)
+          ? data.categories
+          : [];
+
   // Filter based on Category Name
   const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    cat.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Simulate addition by updating Query cache dynamically
-  const handleCreateCategory = (newCat) => {
-    const nextId = categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
-    const updated = [...categories, { id: nextId, ...newCat }];
-    queryClient.setQueryData(["categories"], updated);
+  const handleCreateCategory = async (newCategory) => {
+    // Map form values to API-expected uppercase type codes
+    const payload = {
+      name: newCategory.name.trim(),
+      type: newCategory.type === "Games" ? "GAME" : "FOOD",
+    };
+
+    try {
+      await axiosSecure.post("/api/category/addCategory", payload);
+      toast.success("Category created successfully!");
+      setIsModalOpen(false);
+      refetch();
+    } catch (err) {
+      console.error("Create Category Error:", err.message);
+      console.error("Status:", err.response?.status);
+      console.error("Error Response Data:", JSON.stringify(err.response?.data, null, 2));
+      console.error("Payload sent was:", JSON.stringify(payload));
+      const message =
+        err.response?.data?.message || "Failed to create category.";
+      toast.error(message);
+      throw err; 
+    }
   };
 
   return (
@@ -94,32 +123,35 @@ const Category = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filteredCategories.length > 0 ? (
-                    filteredCategories.map((cat) => (
-                      <tr key={cat.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-4 text-sm font-semibold text-gray-900">
-                          {cat.name}
-                        </td>
-                        <td className="py-4 text-sm text-gray-600">
-                          {cat.type}
-                        </td>
-                        <td className="py-4">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                              cat.status === "Available"
-                                ? "bg-green-50 text-green-600"
-                                : "bg-red-50 text-red-500"
-                            }`}
-                          >
-                            {cat.status}
-                          </span>
-                        </td>
-                        <td className="py-4 text-right">
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
-                            <MoreVertical size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    filteredCategories.map((cat) => {
+                      const displayType = cat.type === "GAME" ? "Games" : cat.type === "FOOD" ? "Food" : cat.type;
+                      const status = cat.status || "Available";
+                      return (
+                        <tr key={cat._id || cat.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-4 text-sm font-semibold text-gray-900">
+                            {cat.name}
+                          </td>
+                          <td className="py-4 text-sm text-gray-600">
+                            {displayType}
+                          </td>
+                          <td className="py-4">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${status === "Available"
+                                  ? "bg-green-50 text-green-600"
+                                  : "bg-red-50 text-red-500"
+                                }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <button className="text-gray-400 hover:text-gray-600 p-1">
+                              <MoreVertical size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan="4" className="py-10 text-center text-sm text-gray-400">

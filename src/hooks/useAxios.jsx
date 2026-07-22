@@ -1,33 +1,43 @@
 import axios from "axios";
-import { useEffect } from "react";
-import Cookies from "js-cookie";
 
+// Create the axios instance with the backend base URL
 const axiosSecure = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
-const useAxiosSecure = () => {
-  useEffect(() => {
-    const interceptor = axiosSecure.interceptors.request.use((config) => {
-      const token = Cookies.get("accessToken");
+axiosSecure.interceptors.request.use((config) => {
+  // Read from localStorage — exact raw JWT, no encoding issues
+  const token = localStorage.getItem("accessToken");
 
-      // ngrok warning bypass header
-      config.headers["ngrok-skip-browser-warning"] = "true";
+  // Always include this header so ngrok doesn't block the request
+  config.headers["ngrok-skip-browser-warning"] = "true";
 
-      // auth token
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+  // Attach the token if the user is logged in
+  if (token) {
+    config.headers.Authorization = token;
+  }
+  console.log(config);
 
-      return config;
-    });
+  return config;
+});
 
-    return () => {
-      axiosSecure.interceptors.request.eject(interceptor);
-    };
-  }, []);
+// Response interceptor — logs the backend error body so we can debug 500s
+axiosSecure.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error(
+      "[axiosSecure] Request failed:",
+      error.config?.url,
+      "|",
+      error.response?.status,
+      "|",
+      JSON.stringify(error.response?.data)
+    );
+    return Promise.reject(error);
+  }
+);
 
-  return axiosSecure;
-};
+// Simple hook — just returns the shared instance
+const useAxiosSecure = () => axiosSecure;
 
 export default useAxiosSecure;

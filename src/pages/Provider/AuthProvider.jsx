@@ -1,82 +1,113 @@
-// import { useEffect, useState, useContext } from "react";
-// import { AuthContext } from "./AuthContext";
-// import useAxiosSecure from "../../hooks/useAxios";
-// import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useContext } from "react";
+import { AuthContext } from "./AuthContext";
+import axios from "axios";
 
-// export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
 
-//   const [user, setUser] = useState(null);
-//   const [loading, setLoading] = useState(true);
+  const [user, setUser]       = useState(null);
+  const [loading, setLoading] = useState(true);
 
-//   const axiosSecure = useAxiosSecure();
+  /* ======================
+        LOGIN
+  ====================== */
+  const login = async ({ email, password }) => {
 
-//   const token = localStorage.getItem("accessToken");
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/auth/login`,
+      { email, password },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      }
+    );
 
-//   const { data: profile, isLoading: profileLoading } = useQuery({
-//     queryKey: ["profile"],
-//     enabled: !!token,
-//     queryFn: async () => {
-//       const res = await axiosSecure.get("/auth/me/");
-//       return res.data;
-//     },
+    const responseData = res.data;
 
-//     staleTime: 1000 * 60 * 5, // 5 min cache
-//     refetchOnWindowFocus: false,
-//     retry: false, // don't retry — a failure shouldn't hang the app
-//   });
+    // Log the full login response so we can see its exact shape
+    console.log("[login] Full response:", JSON.stringify(responseData, null, 2));
 
-//   const avatar = profile?.profile_image
-//     ? `${import.meta.env.VITE_API_URL}${profile.profile_image}`
-//     : "https://i.ibb.co/2kRZ0y9/user.png";
+    // Try every common shape the backend might return the token in:
+    //   Shape A: { data: { accessToken } }
+    //   Shape B: { data: [{ accessToken }] }
+    //   Shape C: { accessToken }               ← top-level
+    //   Shape D: { data: { tokens: { accessToken } } }
+    const dataBlock = Array.isArray(responseData?.data)
+      ? responseData.data[0]
+      : responseData?.data;
 
-//   // login
-//   const login = (data) => {
+    const accessToken =
+      dataBlock?.accessToken          // Shape A / B
+      ?? dataBlock?.tokens?.accessToken // Shape D
+      ?? responseData?.accessToken;    // Shape C
 
-//     const userData = data.user;
-//     const accessToken = data.tokens.access;
+    const refreshToken =
+      dataBlock?.refreshToken
+      ?? dataBlock?.tokens?.refreshToken
+      ?? responseData?.refreshToken;
 
-//     localStorage.setItem("accessToken", accessToken);
-//     localStorage.setItem("user", JSON.stringify(userData));
+    const userData = dataBlock?.user ?? responseData?.user ?? { email };
 
-//     setUser(userData);
-//   };
+    console.log("[login] accessToken found:", accessToken ? `${accessToken.substring(0, 20)}...` : "NOT FOUND ❌");
 
-//   // logout
-//   const logout = () => {
+    if (!accessToken) {
+      throw new Error("Login succeeded but no access token was returned. Check console for full response.");
+    }
 
-//     localStorage.removeItem("accessToken");
-//     localStorage.removeItem("user");
+    // Store tokens in localStorage — no encoding issues unlike cookies
+    localStorage.setItem("accessToken", accessToken);
+    if (refreshToken) {
+      localStorage.setItem("refreshToken", refreshToken);
+    }
 
-//     setUser(null);
-//   };
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
 
-//   useEffect(() => {
+    return responseData;
+  };
 
-//     const savedUser = localStorage.getItem("user");
 
-//     if (savedUser) {
-//       setUser(JSON.parse(savedUser));
-//     }
+  /* ======================
+        LOGOUT
+  ====================== */
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
 
-//     setLoading(false);
+  /* ======================
+        RESTORE SESSION
+  ====================== */
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
+    }
+    setLoading(false);
+  }, []);
 
-//   }, []);
+  /* ======================
+        CONTEXT VALUE
+  ====================== */
+  const authInfo = {
+    user,
+    login,
+    logout,
+    loading,
+  };
 
-//   const authinfo = {
-//     user,
-//     login,
-//     logout,
-//     loading,            // only local state — resolves in milliseconds
-//     profileLoading,     // separate, pages can use this if they need it
-//     profile,
-//     avatar
-//   };
+  return (
+    <AuthContext value={authInfo}>
+      {children}
+    </AuthContext>
+  );
+};
 
-//   return (
-//     <AuthContext value={authinfo}>
-//       {children}
-//     </AuthContext>
-//   );
-// };
-
-// export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);

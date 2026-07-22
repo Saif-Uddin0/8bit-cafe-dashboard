@@ -5,8 +5,11 @@ import { LayoutGrid, Gamepad2, CupSoda } from "lucide-react";
 const CategoryStatCards = ({ categories = [] }) => {
   // Count categories by type
   const totalCount = categories.length;
-  const gameCount = categories.filter((c) => c.type === "Games").length;
-  const foodCount = categories.filter((c) => c.type === "Food").length;
+  const gameCount = categories.filter((c) => {
+    const type = c.type?.toUpperCase();
+    return type === "GAMES" || type === "GAME";
+  }).length;
+  const foodCount = categories.filter((c) => c.type?.toUpperCase() === "FOOD").length;
 
   const cards = [
     {
