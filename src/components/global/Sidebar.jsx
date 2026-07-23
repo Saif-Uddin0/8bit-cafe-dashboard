@@ -1,6 +1,9 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import logo from "../../assets/logo-dash.png";
+import { useAuth } from "../../pages/Provider/AuthProvider";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosSecure from "../../hooks/useAxios";
 import {
   House,
   Users,
@@ -64,8 +67,23 @@ const menuItems = [
 
 const Sidebar = ({ closeSidebar }) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const axiosSecure = useAxiosSecure();
+
+  const token = localStorage.getItem("accessToken");
+
+  // Fetch the logged-in user profile from the backend
+  const { data: adminData } = useQuery({
+    queryKey: ["adminProfile"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/api/user/getMe");
+      return res.data?.data ?? {};
+    },
+    enabled: !!token,
+  });
+
   const handleLogout = () => {
-    // TODO: clear auth tokens/session here
+    logout();
     navigate("/auth/login");
   };
   const linkClass = ({ isActive }) => `
@@ -113,7 +131,10 @@ const Sidebar = ({ closeSidebar }) => {
             <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
 
             <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
-              Admin
+              {(() => {
+                const displayRole = adminData?.role || user?.role || "Admin";
+                return displayRole.charAt(0).toUpperCase() + displayRole.slice(1).toLowerCase();
+              })()}
             </p>
           </div>
         </div>
@@ -159,24 +180,53 @@ const Sidebar = ({ closeSidebar }) => {
 
           <div className="flex items-center gap-2">
 
-            <div className="w-8 h-8 rounded-full bg-white text-[#532C89] flex items-center justify-center text-xs font-bold">
-              AD
-            </div>
+            {(() => {
+              const displayName = adminData 
+                ? `${adminData.firstName ?? ""} ${adminData.lastName ?? ""}`.trim() || adminData.name || user?.name || user?.email || "Admin User"
+                : user?.name || user?.email || "Admin User";
+              const firstLetter = displayName.charAt(0).toUpperCase() || "A";
+              const profileImg = adminData?.profileImg || adminData?.profileImage || adminData?.image || user?.profileImg || user?.profileImage;
 
-            <div>
-              <p className="text-xs font-semibold text-white">
-                Admin User
-              </p>
-            </div>
+              return (
+                <>
+                  {profileImg ? (
+                    <img
+                      src={profileImg}
+                      alt={displayName}
+                      className="w-8 h-8 rounded-full object-cover border border-white/20"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white text-[#532C89] flex items-center justify-center text-xs font-bold">
+                      {firstLetter}
+                    </div>
+                  )}
+
+                  <div className="max-w-[110px] truncate">
+                    <p className="text-xs font-semibold text-white truncate" title={displayName}>
+                      {displayName}
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
 
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white transition-colors"
-          >
-            Login
-          </button>
+          {token || user ? (
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white transition-colors cursor-pointer"
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/auth/login")}
+              className="bg-emerald-500 hover:bg-emerald-600 px-3 py-1 rounded text-xs font-semibold text-white transition-colors cursor-pointer"
+            >
+              Login
+            </button>
+          )}
 
         </div>
 

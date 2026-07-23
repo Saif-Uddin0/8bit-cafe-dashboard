@@ -24,15 +24,6 @@ export const AuthProvider = ({ children }) => {
     );
 
     const responseData = res.data;
-
-    // Log the full login response so we can see its exact shape
-    console.log("[login] Full response:", JSON.stringify(responseData, null, 2));
-
-    // Try every common shape the backend might return the token in:
-    //   Shape A: { data: { accessToken } }
-    //   Shape B: { data: [{ accessToken }] }
-    //   Shape C: { accessToken }               ← top-level
-    //   Shape D: { data: { tokens: { accessToken } } }
     const dataBlock = Array.isArray(responseData?.data)
       ? responseData.data[0]
       : responseData?.data;
@@ -49,8 +40,6 @@ export const AuthProvider = ({ children }) => {
 
     const userData = dataBlock?.user ?? responseData?.user ?? { email };
 
-    console.log("[login] accessToken found:", accessToken ? `${accessToken.substring(0, 20)}...` : "NOT FOUND ❌");
-
     if (!accessToken) {
       throw new Error("Login succeeded but no access token was returned. Check console for full response.");
     }
@@ -61,6 +50,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("refreshToken", refreshToken);
     }
 
+    // Store tokens in cookies as requested for backend cookie-based authentication
+    document.cookie = `accessToken=${accessToken}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax;`;
+    if (refreshToken) {
+      document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax;`;
+    }
+
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
 
@@ -68,13 +63,18 @@ export const AuthProvider = ({ children }) => {
   };
 
 
-  /* ======================
-        LOGOUT
-  ====================== */
+  
+        // LOGOUT
+ 
   const logout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+
+    // Clear cookies as requested
+    document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;";
+    document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;";
+
     setUser(null);
   };
 

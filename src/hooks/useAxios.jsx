@@ -14,10 +14,8 @@ axiosSecure.interceptors.request.use((config) => {
 
   // Attach the token if the user is logged in
   if (token) {
-    config.headers.Authorization = token;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log(config);
-
   return config;
 });
 
