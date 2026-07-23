@@ -4,7 +4,10 @@ import { Gamepad2, Play } from "lucide-react";
 // GameStatCards renders the counts of all and available games
 const GameStatCards = ({ games = [] }) => {
   const totalCount = games.length;
-  const availableCount = games.filter((g) => g.status === "Available").length;
+  // Backend returns status as "AVAILABLE" (uppercase)
+  const availableCount = games.filter((g) =>
+    g.status === "AVAILABLE" || g.status === "Available"
+  ).length;
 
   const stats = [
     {

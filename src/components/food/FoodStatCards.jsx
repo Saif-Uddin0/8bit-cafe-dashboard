@@ -4,8 +4,11 @@ import { Utensils, CheckCircle, XCircle } from "lucide-react";
 // FoodStatCards renders total, available, and unavailable food category summaries
 const FoodStatCards = ({ foods = [] }) => {
   const totalCount = foods.length;
-  const availableCount = foods.filter((f) => f.status === "Available").length;
-  const unavailableCount = foods.filter((f) => f.status === "Un-available").length;
+  const availableCount = foods.filter((f) => {
+    if (f.status) return f.status === "Available";
+    return f.isDelete !== true;
+  }).length;
+  const unavailableCount = totalCount - availableCount;
 
   const stats = [
     {

@@ -1,46 +1,56 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { X, Upload, Clock, Gamepad2, ImageIcon } from "lucide-react";
 
-// Days the backend accepts
 const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"];
-
-// Default schedule row for a day
 const defaultSchedule = { openTime: "09:00 AM", endTime: "05:00 PM" };
 
-const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
+const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
   const modalRef = useRef(null);
 
-  // --- form state ---
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  // ── Initialise from the game object ──
+  const [name, setName] = useState(game?.name ?? "");
+  const [description, setDescription] = useState(game?.description ?? "");
+  const [categoryId, setCategoryId] = useState(game?.categoryId ?? game?.category?.id ?? "");
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-
-  // Price slots: user can enable 30min, 60min, or both
-  const [slot30, setSlot30] = useState(true);
-  const [slot60, setSlot60] = useState(false);
-  const [price30Min, setPrice30Min] = useState("");
-  const [price60Min, setPrice60Min] = useState("");
-
-  // Discount
-  const [isDiscount, setIsDiscount] = useState(false);
-  const [discountPercent, setDiscountPercent] = useState("");
-
-  // Schedules — each enabled day holds { openTime, endTime }
-  const [enabledDays, setEnabledDays] = useState({ SATURDAY: true, SUNDAY: true, MONDAY: true });
-  const [schedules, setSchedules] = useState(
-    WEEKDAYS.reduce((acc, day) => {
-      acc[day] = { ...defaultSchedule };
-      return acc;
-    }, {})
+  const [imagePreview, setImagePreview] = useState(
+    Array.isArray(game?.images) && game.images.length > 0 ? game.images[0] : null
   );
+
+  const [slot30, setSlot30] = useState(game?.price30Min != null);
+  const [slot60, setSlot60] = useState(game?.price60Min != null);
+  const [price30Min, setPrice30Min] = useState(game?.price30Min ?? "");
+  const [price60Min, setPrice60Min] = useState(game?.price60Min ?? "");
+
+  const [isDiscount, setIsDiscount] = useState(game?.isDiscount ?? false);
+  const [discountPercent, setDiscountPercent] = useState(game?.disCountParcenTage ?? "");
+
+  // Status
+  const [status, setStatus] = useState(
+    game?.status === "AVAILABLE" || game?.status === "Available" ? "AVAILABLE" : "UNAVAILABLE"
+  );
+
+  // Build enabledDays & schedules from existing game.schedules
+  const [enabledDays, setEnabledDays] = useState(() => {
+    const map = {};
+    WEEKDAYS.forEach((d) => { map[d] = false; });
+    (game?.schedules ?? []).forEach((s) => { if (WEEKDAYS.includes(s.day)) map[s.day] = true; });
+    return map;
+  });
+
+  const [schedules, setSchedules] = useState(() => {
+    const map = {};
+    WEEKDAYS.forEach((d) => { map[d] = { ...defaultSchedule }; });
+    (game?.schedules ?? []).forEach((s) => {
+      if (WEEKDAYS.includes(s.day)) map[s.day] = { openTime: s.openTime, endTime: s.endTime };
+    });
+    return map;
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Close on Escape & prevent body scroll
+  // Close on Escape, lock body scroll
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -51,7 +61,6 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     };
   }, [onClose]);
 
-  // Handle image selection with preview
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,24 +68,20 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // Toggle a weekday on/off
   const toggleDay = (day) => {
     setEnabledDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
-  // Update a schedule field (openTime or endTime) for a day
   const updateSchedule = (day, field, value) => {
     setSchedules((prev) => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   };
 
-  // Basic validation
   const validate = () => {
     const errs = {};
-    if (!name.trim())        errs.name        = "Game name is required";
-    if (!categoryId)         errs.categoryId  = "Category is required";
-    if (!description.trim()) errs.description = "Description is required";
-    if (!imageFile)          errs.image       = "Game image is required";
-    if (!slot30 && !slot60)  errs.slots       = "Select at least one time slot";
+    if (!name.trim())         errs.name        = "Game name is required";
+    if (!categoryId)          errs.categoryId  = "Category is required";
+    if (!description.trim())  errs.description = "Description is required";
+    if (!slot30 && !slot60)   errs.slots       = "Select at least one time slot";
     if (slot30 && !price30Min) errs.price30Min = "Price for 30 min is required";
     if (slot60 && !price60Min) errs.price60Min = "Price for 60 min is required";
     return errs;
@@ -88,32 +93,30 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    // Build schedules array — only enabled days
     const schedulesArray = WEEKDAYS.filter((day) => enabledDays[day]).map((day) => ({
       day,
       openTime: schedules[day].openTime,
       endTime: schedules[day].endTime,
     }));
 
-    // Build multipart/form-data — matches backend addGame API
     const formData = new FormData();
     formData.append("name", name.trim());
     formData.append("description", description.trim());
     formData.append("categoryId", categoryId);
-    formData.append("images", imageFile);
+    if (imageFile) formData.append("images", imageFile);
     formData.append("isDiscount", isDiscount ? "true" : "false");
     if (isDiscount && discountPercent) formData.append("disCountParcenTage", discountPercent);
     if (slot30 && price30Min) formData.append("price30Min", price30Min);
     if (slot60 && price60Min) formData.append("price60Min", price60Min);
-    // Backend expects schedules as a JSON string in form-data
     formData.append("schedules", JSON.stringify(schedulesArray));
+    formData.append("status", status);
 
     setSubmitting(true);
     try {
-      await onCreate(formData);
+      await onUpdate(game.id, formData);
       onClose();
     } catch {
-      // error is handled by parent
+      // error handled by parent
     } finally {
       setSubmitting(false);
     }
@@ -127,10 +130,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
       <div
         ref={modalRef}
         className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col"
-        style={{
-          maxHeight: "calc(100vh - 24px)",
-          animation: "modalIn 0.2s ease-out",
-        }}
+        style={{ maxHeight: "calc(100vh - 24px)", animation: "modalIn 0.2s ease-out" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Fixed Header ── */}
@@ -140,12 +140,10 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
               <Gamepad2 size={16} className="text-[#532C89]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 leading-none">Add New Game</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Fill in the details below</p>
+              <h2 className="text-base font-bold text-gray-900 leading-none">Edit Game</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Update game details below</p>
             </div>
           </div>
-
-          {/* ✕ Close Button — always visible */}
           <button
             type="button"
             onClick={onClose}
@@ -158,9 +156,9 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
 
         {/* ── Scrollable Body ── */}
         <div className="overflow-y-auto flex-1 px-5 py-4">
-          <form onSubmit={handleSubmit} id="add-game-form" className="space-y-4">
+          <form onSubmit={handleSubmit} id="edit-game-form" className="space-y-4">
 
-            {/* Row 1: Game Name & Category */}
+            {/* Row 1: Name & Category */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
@@ -173,7 +171,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                   onChange={(e) => setName(e.target.value)}
                   className={`w-full px-3.5 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#532C89]/30 focus:border-[#532C89] focus:bg-white text-gray-800 transition-all placeholder:text-gray-400 ${errors.name ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                 />
-                {errors.name && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">⚠ {errors.name}</p>}
+                {errors.name && <p className="text-xs text-red-500 mt-1">⚠ {errors.name}</p>}
               </div>
 
               <div>
@@ -190,14 +188,14 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
-                {errors.categoryId && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">⚠ {errors.categoryId}</p>}
+                {errors.categoryId && <p className="text-xs text-red-500 mt-1">⚠ {errors.categoryId}</p>}
               </div>
             </div>
 
             {/* Row 2: Image Upload */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Game Image
+                Game Image <span className="text-gray-400 normal-case font-normal">(leave blank to keep current)</span>
               </label>
               <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-3.5 cursor-pointer hover:bg-gray-50 transition-all group ${errors.image ? "border-red-400 bg-red-50/30" : "border-gray-200 hover:border-[#532C89]/40"}`}>
                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
@@ -211,12 +209,11 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-600 flex items-center gap-1.5 truncate">
                     <Upload size={13} />
-                    {imageFile ? imageFile.name : "Click to upload image"}
+                    {imageFile ? imageFile.name : imagePreview ? "Click to replace image" : "Click to upload image"}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP supported</p>
                 </div>
               </label>
-              {errors.image && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">⚠ {errors.image}</p>}
             </div>
 
             {/* Row 3: Description */}
@@ -231,7 +228,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                 onChange={(e) => setDescription(e.target.value)}
                 className={`w-full px-3.5 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#532C89]/30 focus:border-[#532C89] focus:bg-white text-gray-800 resize-none transition-all placeholder:text-gray-400 ${errors.description ? "border-red-400 bg-red-50" : "border-gray-200"}`}
               />
-              {errors.description && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">⚠ {errors.description}</p>}
+              {errors.description && <p className="text-xs text-red-500 mt-1">⚠ {errors.description}</p>}
             </div>
 
             {/* Row 4: Time Slots & Pricing */}
@@ -239,17 +236,12 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
                 Time Slots & Pricing
               </label>
-              {errors.slots && <p className="text-xs text-red-500 mb-2 flex items-center gap-1">⚠ {errors.slots}</p>}
+              {errors.slots && <p className="text-xs text-red-500 mb-2">⚠ {errors.slots}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* 30 min slot */}
+                {/* 30 min */}
                 <div className={`border rounded-xl p-3 transition-all ${slot30 ? "border-[#532C89] bg-[#532C89]/5" : "border-gray-200 bg-gray-50/50"}`}>
                   <label className="flex items-center gap-2 cursor-pointer mb-2.5">
-                    <input
-                      type="checkbox"
-                      checked={slot30}
-                      onChange={(e) => setSlot30(e.target.checked)}
-                      className="w-4 h-4 rounded accent-[#532C89] cursor-pointer"
-                    />
+                    <input type="checkbox" checked={slot30} onChange={(e) => setSlot30(e.target.checked)} className="w-4 h-4 rounded accent-[#532C89] cursor-pointer" />
                     <span className="text-sm font-semibold text-gray-700">30 min slot</span>
                   </label>
                   <input
@@ -263,15 +255,10 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                   {errors.price30Min && <p className="text-xs text-red-500 mt-1">⚠ {errors.price30Min}</p>}
                 </div>
 
-                {/* 60 min slot */}
+                {/* 60 min */}
                 <div className={`border rounded-xl p-3 transition-all ${slot60 ? "border-[#532C89] bg-[#532C89]/5" : "border-gray-200 bg-gray-50/50"}`}>
                   <label className="flex items-center gap-2 cursor-pointer mb-2.5">
-                    <input
-                      type="checkbox"
-                      checked={slot60}
-                      onChange={(e) => setSlot60(e.target.checked)}
-                      className="w-4 h-4 rounded accent-[#532C89] cursor-pointer"
-                    />
+                    <input type="checkbox" checked={slot60} onChange={(e) => setSlot60(e.target.checked)} className="w-4 h-4 rounded accent-[#532C89] cursor-pointer" />
                     <span className="text-sm font-semibold text-gray-700">60 min slot</span>
                   </label>
                   <input
@@ -287,7 +274,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
               </div>
             </div>
 
-            {/* Row 5: Discount (optional) */}
+            {/* Row 5: Discount */}
             <div className={`flex items-center gap-3 p-3 border rounded-xl transition-all ${isDiscount ? "border-[#532C89]/40 bg-[#532C89]/5" : "border-gray-200 bg-gray-50/50"}`}>
               <label className="flex items-center gap-2 cursor-pointer shrink-0">
                 <input
@@ -308,21 +295,52 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
               />
             </div>
 
-            {/* Row 6: Schedules */}
+            {/* Row 5b: Status toggle */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Availability Status
+              </label>
+              <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-xl w-fit">
+                <button
+                  type="button"
+                  onClick={() => setStatus("AVAILABLE")}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    status === "AVAILABLE"
+                      ? "bg-green-500 text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${status === "AVAILABLE" ? "bg-white" : "bg-gray-400"}`} />
+                  Available
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("UNAVAILABLE")}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    status === "UNAVAILABLE"
+                      ? "bg-red-500 text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${status === "UNAVAILABLE" ? "bg-white" : "bg-gray-400"}`} />
+                  Unavailable
+                </button>
+              </div>
+            </div>
+
+            {/* Row 6: Operating Hours */}
             <div>
               <div className="flex items-center gap-1.5 mb-2.5 pt-1 border-t border-gray-100">
                 <Clock size={14} className="text-[#532C89]" />
                 <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">Operating Hours</span>
                 <span className="text-xs text-gray-400 ml-0.5">(toggle days on/off)</span>
               </div>
-
               <div className="space-y-2">
                 {WEEKDAYS.map((day) => (
                   <div
                     key={day}
                     className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-xl border transition-all ${enabledDays[day] ? "border-[#532C89]/25 bg-[#532C89]/5" : "border-gray-100 bg-gray-50/60 opacity-60"}`}
                   >
-                    {/* Day toggle */}
                     <label className="flex items-center gap-2 cursor-pointer shrink-0 sm:w-28">
                       <input
                         type="checkbox"
@@ -334,8 +352,6 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                         {day.charAt(0) + day.slice(1).toLowerCase()}
                       </span>
                     </label>
-
-                    {/* Time inputs */}
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="text"
@@ -374,7 +390,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
           </button>
           <button
             type="submit"
-            form="add-game-form"
+            form="edit-game-form"
             disabled={submitting}
             className="px-6 py-2.5 bg-[#532C89] hover:bg-[#6C04D7] text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
           >
@@ -384,12 +400,12 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Creating...
+                Saving...
               </>
             ) : (
               <>
                 <Gamepad2 size={14} />
-                Create Game
+                Save Changes
               </>
             )}
           </button>
@@ -407,4 +423,4 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
   );
 };
 
-export default AddGameModal;
+export default EditGameModal;
