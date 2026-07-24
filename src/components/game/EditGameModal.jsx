@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { X, Upload, Clock, Gamepad2, ImageIcon } from "lucide-react";
 
-const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"];
+const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 const defaultSchedule = { openTime: "09:00 AM", endTime: "05:00 PM" };
 
 const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
   const modalRef = useRef(null);
 
-  // ── Initialise from the game object ──
+
   const [name, setName] = useState(game?.name ?? "");
   const [description, setDescription] = useState(game?.description ?? "");
   const [categoryId, setCategoryId] = useState(game?.categoryId ?? game?.category?.id ?? "");
@@ -23,7 +23,31 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
   const [price60Min, setPrice60Min] = useState(game?.price60Min ?? "");
 
   const [isDiscount, setIsDiscount] = useState(game?.isDiscount ?? false);
-  const [discountPercent, setDiscountPercent] = useState(game?.disCountParcenTage ?? "");
+  const [discountPercent, setDiscountPercent] = useState(
+    game?.disCountParcenTage ?? game?.discountParcenTage ?? ""
+  );
+
+  const handleDiscountPercentChange = (val) => {
+    setDiscountPercent(val);
+    const numericValue = parseFloat(val);
+    if (!isNaN(numericValue) && numericValue > 0) {
+      setIsDiscount(true);
+    } else {
+      setIsDiscount(false);
+    }
+  };
+
+  const handleIsDiscountChange = (checked) => {
+    setIsDiscount(checked);
+    if (!checked) {
+      setDiscountPercent("0");
+    } else {
+      const numericValue = parseFloat(discountPercent);
+      if (isNaN(numericValue) || numericValue <= 0) {
+        setDiscountPercent("");
+      }
+    }
+  };
 
   // Status
   const [status, setStatus] = useState(
@@ -104,8 +128,11 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
     formData.append("description", description.trim());
     formData.append("categoryId", categoryId);
     if (imageFile) formData.append("images", imageFile);
-    formData.append("isDiscount", isDiscount ? "true" : "false");
-    if (isDiscount && discountPercent) formData.append("disCountParcenTage", discountPercent);
+    const numericDiscount = parseFloat(discountPercent);
+    const hasDiscount = isDiscount && !isNaN(numericDiscount) && numericDiscount > 0;
+    formData.append("isDiscount", hasDiscount ? "true" : "false");
+    formData.append("disCountParcenTage", hasDiscount ? String(numericDiscount) : "0");
+    formData.append("discountParcenTage", hasDiscount ? String(numericDiscount) : "0");
     if (slot30 && price30Min) formData.append("price30Min", price30Min);
     if (slot60 && price60Min) formData.append("price60Min", price60Min);
     formData.append("schedules", JSON.stringify(schedulesArray));
@@ -280,7 +307,7 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                 <input
                   type="checkbox"
                   checked={isDiscount}
-                  onChange={(e) => setIsDiscount(e.target.checked)}
+                  onChange={(e) => handleIsDiscountChange(e.target.checked)}
                   className="w-4 h-4 rounded accent-[#532C89] cursor-pointer"
                 />
                 <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">Apply Discount</span>
@@ -290,7 +317,7 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                 placeholder="Discount % (e.g. 15)"
                 disabled={!isDiscount}
                 value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
+                onChange={(e) => handleDiscountPercentChange(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#532C89] text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed bg-white transition-all"
               />
             </div>

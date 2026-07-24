@@ -3,9 +3,8 @@ import ReactDOM from "react-dom";
 import { X, Upload, Clock, Gamepad2, ImageIcon } from "lucide-react";
 
 // Days the backend accepts
-const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"];
+const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
-// Default schedule row for a day
 const defaultSchedule = { openTime: "09:00 AM", endTime: "05:00 PM" };
 
 const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
@@ -27,6 +26,28 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
   // Discount
   const [isDiscount, setIsDiscount] = useState(false);
   const [discountPercent, setDiscountPercent] = useState("");
+
+  const handleDiscountPercentChange = (val) => {
+    setDiscountPercent(val);
+    const numericValue = parseFloat(val);
+    if (!isNaN(numericValue) && numericValue > 0) {
+      setIsDiscount(true);
+    } else {
+      setIsDiscount(false);
+    }
+  };
+
+  const handleIsDiscountChange = (checked) => {
+    setIsDiscount(checked);
+    if (!checked) {
+      setDiscountPercent("0");
+    } else {
+      const numericValue = parseFloat(discountPercent);
+      if (isNaN(numericValue) || numericValue <= 0) {
+        setDiscountPercent("");
+      }
+    }
+  };
 
   // Schedules — each enabled day holds { openTime, endTime }
   const [enabledDays, setEnabledDays] = useState({ SATURDAY: true, SUNDAY: true, MONDAY: true });
@@ -101,8 +122,11 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     formData.append("description", description.trim());
     formData.append("categoryId", categoryId);
     formData.append("images", imageFile);
-    formData.append("isDiscount", isDiscount ? "true" : "false");
-    if (isDiscount && discountPercent) formData.append("disCountParcenTage", discountPercent);
+    const numericDiscount = parseFloat(discountPercent);
+    const hasDiscount = isDiscount && !isNaN(numericDiscount) && numericDiscount > 0;
+    formData.append("isDiscount", hasDiscount ? "true" : "false");
+    formData.append("disCountParcenTage", hasDiscount ? String(numericDiscount) : "0");
+    formData.append("discountParcenTage", hasDiscount ? String(numericDiscount) : "0");
     if (slot30 && price30Min) formData.append("price30Min", price30Min);
     if (slot60 && price60Min) formData.append("price60Min", price60Min);
     // Backend expects schedules as a JSON string in form-data
@@ -293,7 +317,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                 <input
                   type="checkbox"
                   checked={isDiscount}
-                  onChange={(e) => setIsDiscount(e.target.checked)}
+                  onChange={(e) => handleIsDiscountChange(e.target.checked)}
                   className="w-4 h-4 rounded accent-[#532C89] cursor-pointer"
                 />
                 <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">Apply Discount</span>
@@ -303,7 +327,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
                 placeholder="Discount % (e.g. 15)"
                 disabled={!isDiscount}
                 value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
+                onChange={(e) => handleDiscountPercentChange(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#532C89] text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed bg-white transition-all"
               />
             </div>

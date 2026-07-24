@@ -125,8 +125,10 @@ const ViewGameModal = ({ game, onClose, onEdit }) => {
               <p className="text-xs font-semibold text-gray-700">
                 {game.isDiscount ? "Discount Active" : "No Discount"}
               </p>
-              {game.isDiscount && game.disCountParcenTage && (
-                <p className="text-sm font-bold text-amber-600">{game.disCountParcenTage}% off</p>
+              {game.isDiscount && (game.disCountParcenTage != null || game.discountParcenTage != null) && (
+                <p className="text-sm font-bold text-amber-600">
+                  {game.disCountParcenTage ?? game.discountParcenTage}% off
+                </p>
               )}
             </div>
           </div>
