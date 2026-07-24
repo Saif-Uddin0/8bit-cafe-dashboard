@@ -1,4 +1,0 @@
-- [x] Update [Category.jsx](file:///d:/Web_Development\Client_Project\8bit-cafe-dahboard/src/pages/dashboard/Category.jsx) to use `useAxiosSecure` and fetch real categories
-- [x] Connect the create category function in [Category.jsx](file:///d:/Web_Development\Client_Project\8bit-cafe-dahboard/src/pages/dashboard/Category.jsx) with toast notifications
-- [x] Update [CreateCategoryModal.jsx](file:///d:/Web_Development\Client_Project\8bit-cafe-dahboard/src/components/category/CreateCategoryModal.jsx) to support loading/submitting state
-- [x] Verify the Category page loads, creates categories successfully, and renders appropriate toast feedback
