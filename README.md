@@ -123,7 +123,7 @@ Install all required Node modules defined in `package.json`:
 npm install
 ```
 
-### 4. Setup Environment Variables
+<!-- ### 4. Setup Environment Variables
 Create a local `.env` file by copying the template:
 ```bash
 cp .env.example .env
@@ -131,7 +131,7 @@ cp .env.example .env
 Open the `.env` file and set your Backend API server endpoint:
 ```env
 VITE_API_URL=https://your-backend-api-subdomain.ngrok-free.dev
-```
+``` -->
 
 > [!NOTE]
 > The Axios HTTP instance (`src/hooks/useAxios.jsx`) automatically sends a `ngrok-skip-browser-warning: true` header to bypass warning interstitial screens when connecting to standard ngrok tunnel urls.
