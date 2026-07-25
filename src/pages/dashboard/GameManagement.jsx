@@ -12,10 +12,7 @@ import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import useAxiosSecure from "../../hooks/useAxios";
 import { toast } from "react-hot-toast";
 
-/* ──────────────────────────────────────────────
-   Click-to-open popover action cell
-   ⋮ → [View] [Edit] [✕]
-────────────────────────────────────────────── */
+
 const ActionCell = ({ onView, onEdit }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -87,9 +84,7 @@ const ActionCell = ({ onView, onEdit }) => {
   );
 };
 
-/* ──────────────────────────────────────────────
-   Main Page
-────────────────────────────────────────────── */
+
 const GameManagement = () => {
   const axiosSecure = useAxiosSecure();
   const [searchTerm, setSearchTerm] = useState("");
@@ -244,7 +239,7 @@ const GameManagement = () => {
                   {filteredGames.length > 0 ? (
                     filteredGames.map((game) => {
                       const gameImage = Array.isArray(game.images) && game.images.length > 0
-                        ? game.images[0]
+                        ? (typeof game.images[0] === "object" ? game.images[0]?.url : game.images[0])
                         : null;
                       const isAvailable = game.status === "AVAILABLE" || game.status === "Available";
                       const statusLabel = isAvailable ? "Available" : "Unavailable";

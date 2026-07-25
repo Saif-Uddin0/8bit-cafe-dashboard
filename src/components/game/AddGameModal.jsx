@@ -7,6 +7,138 @@ const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURS
 
 const defaultSchedule = { openTime: "09:00 AM", endTime: "05:00 PM" };
 
+const normalizeTime = (timeStr) => {
+  if (!timeStr) return "";
+  const cleaned = timeStr.replace(/\s+/g, "").toUpperCase();
+  const match = cleaned.match(/^(\d{1,2}):?(\d{2})(AM|PM)?$/) || cleaned.match(/^(\d{1,2})(AM|PM)$/);
+  if (!match) return timeStr.trim();
+  
+  const hours = match[1];
+  const minutes = match[2] || "00";
+  const ampm = match[3] || "";
+  
+  if (ampm) {
+    return `${hours}:${minutes} ${ampm}`;
+  }
+  return `${hours}:${minutes}`;
+};
+
+const to24Hour = (time12h) => {
+  if (!time12h) return "09:00";
+  const cleaned = time12h.replace(/\s+/g, "").toUpperCase();
+  const match = cleaned.match(/^(\d{1,2}):(\d{2})(AM|PM)?$/);
+  if (!match) return "09:00";
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const ampm = match[3];
+  
+  if (ampm === "PM" && hours < 12) hours += 12;
+  if (ampm === "AM" && hours === 12) hours = 0;
+  
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
+
+const to12Hour = (time24h) => {
+  if (!time24h) return "09:00 AM";
+  const parts = time24h.split(":");
+  let hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
+};
+
+const formatTimeToISO = (timeStr) => {
+  if (!timeStr) return "1970-01-01T00:00:00.000Z";
+  if (timeStr.includes("T")) return timeStr;
+  const time24 = to24Hour(timeStr);
+  return `1970-01-01T${time24}:00.000Z`;
+};
+
+const TimePicker = ({ label, value, onChange, disabled }) => {
+  const parsed = (() => {
+    if (!value) return { hour: "09", minute: "00", ampm: "AM" };
+    const cleaned = value.replace(/\s+/g, "").toUpperCase();
+    const match = cleaned.match(/^(\d{1,2}):?(\d{2})(AM|PM)?$/) || cleaned.match(/^(\d{1,2})(AM|PM)$/);
+    if (!match) return { hour: "09", minute: "00", ampm: "AM" };
+    
+    let hr = match[1].padStart(2, "0");
+    let min = match[2] || "00";
+    let ap = match[3] || "AM";
+    return { hour: hr, minute: min, ampm: ap };
+  })();
+
+  const updateField = (field, newVal) => {
+    const next = { ...parsed, [field]: newVal };
+    onChange(`${next.hour}:${next.minute} ${next.ampm}`);
+  };
+
+  const hoursList = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const minutesList = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+
+  return (
+    <div className={`flex flex-col flex-1 ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
+      {label && <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{label}</label>}
+      <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#532C89]/20 focus-within:border-[#532C89]">
+        <div className="flex items-center gap-1">
+          <select
+            value={parsed.hour}
+            disabled={disabled}
+            onChange={(e) => updateField("hour", e.target.value)}
+            className="bg-transparent border-0 text-sm font-semibold text-gray-700 p-1 focus:ring-0 focus:outline-none cursor-pointer outline-none select-none appearance-none text-center"
+            style={{ width: "32px" }}
+          >
+            {hoursList.map((h) => <option key={h} value={h}>{h}</option>)}
+          </select>
+          
+          <span className="text-xs text-gray-400 font-bold select-none">:</span>
+          
+          <select
+            value={parsed.minute}
+            disabled={disabled}
+            onChange={(e) => updateField("minute", e.target.value)}
+            className="bg-transparent border-0 text-sm font-semibold text-gray-700 p-1 focus:ring-0 focus:outline-none cursor-pointer outline-none select-none appearance-none text-center"
+            style={{ width: "32px" }}
+          >
+            {minutesList.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+
+        <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0 border border-gray-200/50">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => updateField("ampm", "AM")}
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+              parsed.ampm === "AM"
+                ? "bg-white text-[#532C89] shadow-sm"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => updateField("ampm", "PM")}
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+              parsed.ampm === "PM"
+                ? "bg-white text-[#532C89] shadow-sm"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
   const modalRef = useRef(null);
 
@@ -57,6 +189,27 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
       return acc;
     }, {})
   );
+
+  // Modern UX schedule mode: "SAME" (one schedule for all active days) or "CUSTOM"
+  const [scheduleMode, setScheduleMode] = useState("SAME");
+  const [commonOpenTime, setCommonOpenTime] = useState("09:00 AM");
+  const [commonEndTime, setCommonEndTime] = useState("05:00 PM");
+
+  const updateCommonSchedule = (field, value) => {
+    if (field === "openTime") {
+      setCommonOpenTime(value);
+    } else if (field === "endTime") {
+      setCommonEndTime(value);
+    }
+    setSchedules((prev) => {
+      const next = { ...prev };
+      WEEKDAYS.forEach((day) => {
+        next[day] = { ...next[day], [field]: value };
+      });
+      return next;
+    });
+  };
+
 
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -112,8 +265,8 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     // Build schedules array — only enabled days
     const schedulesArray = WEEKDAYS.filter((day) => enabledDays[day]).map((day) => ({
       day,
-      openTime: schedules[day].openTime,
-      endTime: schedules[day].endTime,
+      openTime: formatTimeToISO(schedules[day].openTime),
+      endTime: formatTimeToISO(schedules[day].endTime),
     }));
 
     // Build multipart/form-data — matches backend addGame API
@@ -124,9 +277,9 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
     formData.append("images", imageFile);
     const numericDiscount = parseFloat(discountPercent);
     const hasDiscount = isDiscount && !isNaN(numericDiscount) && numericDiscount > 0;
-    formData.append("isDiscount", hasDiscount ? "true" : "false");
-    formData.append("disCountParcenTage", hasDiscount ? String(numericDiscount) : "0");
-    formData.append("discountParcenTage", hasDiscount ? String(numericDiscount) : "0");
+    formData.append("isDiscount", hasDiscount ? "true" : "");
+    formData.append("disCountParcenTage", hasDiscount ? String(numericDiscount) : "");
+    formData.append("discountParcenTage", hasDiscount ? String(numericDiscount) : "");
     if (slot30 && price30Min) formData.append("price30Min", price30Min);
     if (slot60 && price60Min) formData.append("price60Min", price60Min);
     // Backend expects schedules as a JSON string in form-data
@@ -334,54 +487,137 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
 
             {/* Row 6: Schedules */}
             <div>
-              <div className="flex items-center gap-1.5 mb-2.5 pt-1 border-t border-gray-100">
-                <Clock size={14} className="text-[#532C89]" />
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">Operating Hours</span>
-                <span className="text-xs text-gray-400 ml-0.5">(toggle days on/off)</span>
+              <div className="flex items-center justify-between gap-1.5 mb-3 pt-1 border-t border-gray-100">
+                <div className="flex items-center gap-1.5">
+                  <Clock size={14} className="text-[#532C89]" />
+                  <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">Operating Hours</span>
+                </div>
+                
+                {/* Segmented Control */}
+                <div className="flex p-0.5 bg-gray-100 rounded-lg shrink-0 border border-gray-200/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduleMode("SAME");
+                      setSchedules((prev) => {
+                        const next = { ...prev };
+                        WEEKDAYS.forEach((day) => {
+                          next[day] = { openTime: commonOpenTime, endTime: commonEndTime };
+                        });
+                        return next;
+                      });
+                    }}
+                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                      scheduleMode === "SAME"
+                        ? "bg-white text-[#532C89] shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    Same Hours
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("CUSTOM")}
+                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                      scheduleMode === "CUSTOM"
+                        ? "bg-white text-[#532C89] shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    Custom Hours
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                {WEEKDAYS.map((day) => (
-                  <div
-                    key={day}
-                    className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-xl border transition-all ${enabledDays[day] ? "border-[#532C89]/25 bg-[#532C89]/5" : "border-gray-100 bg-gray-50/60 opacity-60"}`}
-                  >
-                    {/* Day toggle */}
-                    <label className="flex items-center gap-2 cursor-pointer shrink-0 sm:w-28">
-                      <input
-                        type="checkbox"
-                        checked={!!enabledDays[day]}
-                        onChange={() => toggleDay(day)}
-                        className="w-3.5 h-3.5 rounded accent-[#532C89] cursor-pointer"
-                      />
-                      <span className={`text-xs font-semibold capitalize ${enabledDays[day] ? "text-[#532C89]" : "text-gray-400"}`}>
-                        {day.charAt(0) + day.slice(1).toLowerCase()}
-                      </span>
-                    </label>
+              {scheduleMode === "SAME" ? (
+                <div className="bg-[#532C89]/5 border border-[#532C89]/10 rounded-xl p-3.5 space-y-3.5">
+                  {/* Common time inputs */}
+                  <div className="flex items-center gap-2">
+                    <TimePicker
+                      label="Open Time"
+                      value={commonOpenTime}
+                      onChange={(val) => updateCommonSchedule("openTime", val)}
+                    />
+                    <span className="text-xs text-gray-400 font-medium pt-4 shrink-0">to</span>
+                    <TimePicker
+                      label="Close Time"
+                      value={commonEndTime}
+                      onChange={(val) => updateCommonSchedule("endTime", val)}
+                    />
+                  </div>
 
-                    {/* Time inputs */}
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
-                        type="text"
-                        placeholder="Open"
-                        disabled={!enabledDays[day]}
-                        value={schedules[day].openTime}
-                        onChange={(e) => updateSchedule(day, "openTime", e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#532C89] text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                      />
-                      <span className="text-xs text-gray-400 shrink-0">to</span>
-                      <input
-                        type="text"
-                        placeholder="Close"
-                        disabled={!enabledDays[day]}
-                        value={schedules[day].endTime}
-                        onChange={(e) => updateSchedule(day, "endTime", e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#532C89] text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                      />
+                  {/* Day selection */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Active Days</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {WEEKDAYS.map((day) => {
+                        const isActive = !!enabledDays[day];
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => toggleDay(day)}
+                            className={`flex-1 min-w-[50px] py-2 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-[#532C89] text-white border-[#532C89] shadow-sm"
+                                : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700"
+                            }`}
+                          >
+                            {day.charAt(0) + day.slice(1, 3).toLowerCase()}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {WEEKDAYS.map((day) => (
+                    <div
+                      key={day}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${
+                        enabledDays[day] ? "border-[#532C89]/25 bg-[#532C89]/5" : "border-gray-100 bg-gray-50/60 opacity-60"
+                      }`}
+                    >
+                      {/* Day toggle with Switch style */}
+                      <div className="flex items-center gap-3 shrink-0 sm:w-32">
+                        <button
+                          type="button"
+                          onClick={() => toggleDay(day)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            enabledDays[day] ? "bg-[#532C89]" : "bg-gray-200"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              enabledDays[day] ? "translate-x-4" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                        <span className={`text-xs font-bold capitalize ${enabledDays[day] ? "text-[#532C89]" : "text-gray-400"}`}>
+                          {day.charAt(0) + day.slice(1).toLowerCase()}
+                        </span>
+                      </div>
+
+                      {/* Time inputs */}
+                      <div className="flex items-center gap-2 flex-1">
+                        <TimePicker
+                          disabled={!enabledDays[day]}
+                          value={schedules[day].openTime}
+                          onChange={(val) => updateSchedule(day, "openTime", val)}
+                        />
+                        <span className="text-xs text-gray-400 shrink-0">to</span>
+                        <TimePicker
+                          disabled={!enabledDays[day]}
+                          value={schedules[day].endTime}
+                          onChange={(val) => updateSchedule(day, "endTime", val)}
+                        />
+
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </form>

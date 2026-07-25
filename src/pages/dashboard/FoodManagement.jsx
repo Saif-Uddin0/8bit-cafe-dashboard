@@ -1,36 +1,115 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MoreVertical, Utensils, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search, Utensils, ChevronLeft, ChevronRight,
+  MoreVertical, Eye, Pencil, X,
+} from "lucide-react";
 import FoodStatCards from "../../components/food/FoodStatCards";
 import AddFoodModal from "../../components/food/AddFoodModal";
+import ViewFoodModal from "../../components/food/ViewFoodModal";
+import EditFoodModal from "../../components/food/EditFoodModal";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import useAxiosSecure from "../../hooks/useAxios";
 
+// ── ActionCell — identical pattern to GameManagement ────────────────────────────
+const ActionCell = ({ onView, onEdit }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <td className="py-4 text-right whitespace-nowrap">
+      <div ref={ref} className="relative inline-block">
+
+        {/* ⋮ trigger */}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {/* Popover */}
+        {open && (
+          <div
+            className="absolute right-0 top-9 z-50 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2"
+            style={{ animation: "popIn 0.15s ease-out" }}
+          >
+            {/* View */}
+            <button
+              onClick={() => { setOpen(false); onView(); }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Eye size={11} />
+              View
+            </button>
+
+            {/* Edit */}
+            <button
+              onClick={() => { setOpen(false); onEdit(); }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black text-black hover:bg-black hover:text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Pencil size={11} />
+              Edit
+            </button>
+
+            {/* Close */}
+            <button
+              onClick={() => setOpen(false)}
+              className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all cursor-pointer ml-0.5"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.9) translateY(-4px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </td>
+  );
+};
+
+// ── Page ────────────────────────────────────────────────────────────────────────
 const FoodManagement = () => {
   const axiosSecure = useAxiosSecure();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch foods with backend server-side pagination (page & limit)
+  // Modal state
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [viewFood, setViewFood] = useState(null);
+  const [editFood, setEditFood] = useState(null);
+
+  // ── Fetch foods (TanStack query + refetch) ──────────────────────────────────
   const { data: foodResponse, isLoading, isError, refetch } = useQuery({
     queryKey: ["foods", currentPage, searchTerm],
     queryFn: async () => {
-      const queryParams = new URLSearchParams({
+      const params = new URLSearchParams({
         page: String(currentPage),
         limit: "10",
       });
-      if (searchTerm.trim()) {
-        queryParams.append("searchTerm", searchTerm.trim());
-      }
-      const res = await axiosSecure.get(`/api/foods/getFoods?${queryParams.toString()}`);
+      if (searchTerm.trim()) params.append("searchTerm", searchTerm.trim());
+      const res = await axiosSecure.get(`/api/foods/getFoods?${params.toString()}`);
       return res.data;
     },
   });
 
-  // Extract nested pagination meta & data array
-  const body = foodResponse?.data ?? foodResponse ?? {};
-  const meta = body?.meta ?? {};
+  // Normalise nested response shape
+  const body  = foodResponse?.data ?? foodResponse ?? {};
+  const meta  = body?.meta ?? {};
   const foods = Array.isArray(body?.data)
     ? body.data
     : Array.isArray(body)
@@ -41,16 +120,11 @@ const FoodManagement = () => {
   const totalPages = meta?.totalPage || Math.ceil(totalItems / 10) || 1;
   const activePage = Math.min(currentPage, Math.max(totalPages, 1));
 
-  // Add new food item and refetch backend state
-  const handleAddFood = async () => {
-    refetch();
-  };
-
   return (
     <div className="space-y-4 max-w-[1600px] mx-auto px-2 md:px-4 pb-8">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
-          <div className="w-12 h-12 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin" />
           <p className="text-gray-500 font-semibold text-sm">Loading foods...</p>
         </div>
       ) : isError ? (
@@ -61,9 +135,10 @@ const FoodManagement = () => {
         <>
           <FoodStatCards foods={foods} />
 
+          {/* Add Food button */}
           <div className="flex justify-end mt-4">
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsAddOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
             >
               <Utensils size={16} />
@@ -71,10 +146,12 @@ const FoodManagement = () => {
             </button>
           </div>
 
+          {/* Table card */}
           <div className="bg-white border border-gray-100 rounded-[20px] p-6 shadow-sm">
+
+            {/* Table header row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h2 className="text-lg font-bold text-gray-900">All Foods</h2>
-
               <div className="relative w-full sm:w-72">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
                   <Search size={16} />
@@ -83,10 +160,7 @@ const FoodManagement = () => {
                   type="text"
                   placeholder="Search by name or category"
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                 />
               </div>
@@ -96,46 +170,48 @@ const FoodManagement = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[22%] whitespace-nowrap">
-                      Food Name
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[12%] whitespace-nowrap">
-                      Category
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[13%] whitespace-nowrap">
-                      Delivery Time
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[12%] whitespace-nowrap">
-                      Delivery Fee
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[11%] whitespace-nowrap">
-                      Price
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[20%] whitespace-nowrap">
-                      Short Description
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[10%] whitespace-nowrap">
-                      Status
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right w-[8%] whitespace-nowrap">
-                      Action
-                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[25%] whitespace-nowrap">Food Name</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[15%] whitespace-nowrap">Category</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[12%] whitespace-nowrap">Price</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[15%] whitespace-nowrap">Delivery Time</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[13%] whitespace-nowrap">Delivery Fee</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[10%] whitespace-nowrap">Status</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right w-[10%] whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {foods.length > 0 ? (
                     foods.map((food) => {
-                      const categoryName = typeof food.category === "object" ? food.category?.name : food.category;
-                      const deliveryTime = food.delivery_time ? `${food.delivery_time} mins` : food.deliveryTime || "N/A";
-                      const deliveryFee = food.delivery_fee !== undefined ? `৳${food.delivery_fee}` : food.deliveryFee || "N/A";
-                      const price = food.price !== undefined ? `৳${food.price}` : "N/A";
-                      const description = food.short_description || food.description || "N/A";
-                      const status = food.status || (food.isDelete ? "Un-available" : "Available");
-                      const foodImage = Array.isArray(food.images) && food.images.length > 0 ? food.images[0] : null;
+                      const categoryName =
+                        typeof food.category === "object"
+                          ? food.category?.name
+                          : food.category;
+                      const deliveryTime = food.delivery_time
+                        ? `${food.delivery_time} mins`
+                        : food.deliveryTime || "—";
+                      const deliveryFee =
+                        food.delivery_fee != null
+                          ? `৳${food.delivery_fee}`
+                          : food.deliveryFee || "—";
+                      // Backend stores isDisCount (capital C) and disCountParcentage
+                      const discountVal = food.disCountParcentage ?? food.discountParcentage ?? food.discountPercentage ?? food.discountParcenTage ?? 0;
+                      const hasDiscount = (food.isDisCount ?? food.isDiscount) && Number(discountVal) > 0;
+                      const originalPrice = food.price;
+                      const discountedPrice = hasDiscount ? Math.round(originalPrice * (1 - discountVal / 100)) : originalPrice;
+
+                      const description =
+                        food.short_description || food.description || "—";
+                      const foodImage =
+                         Array.isArray(food.images) && food.images.length > 0
+                           ? (typeof food.images[0] === "object" ? food.images[0]?.url : food.images[0])
+                           : null;
 
                       return (
-                        <tr key={food.id || food._id} className="hover:bg-gray-50/50 transition-colors">
-                          {/* Food Name + Image Thumbnail */}
+                        <tr
+                          key={food.id || food._id}
+                          className="group hover:bg-gray-50/50 transition-colors"
+                        >
+                          {/* Food Name + Thumbnail */}
                           <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-3">
                               {foodImage ? (
@@ -149,13 +225,30 @@ const FoodManagement = () => {
                                   <Utensils size={18} />
                                 </div>
                               )}
-                              <span className="truncate max-w-[180px]">{food.name}</span>
+                              <span className="truncate max-w-[160px]">{food.name}</span>
                             </div>
                           </td>
 
                           {/* Category */}
                           <td className="py-4 text-sm text-gray-600 whitespace-nowrap">
-                            {categoryName || "N/A"}
+                            {categoryName || "—"}
+                          </td>
+
+                          {/* Price */}
+                          <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
+                            {hasDiscount ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 line-through">৳{originalPrice}</span>
+                                <span className="text-sm font-bold text-red-500 flex items-center gap-1">
+                                  ৳{discountedPrice}
+                                  <span className="text-[10px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-bold shrink-0">
+                                    {discountVal}% OFF
+                                  </span>
+                                </span>
+                              </div>
+                            ) : (
+                              food.price != null ? `৳${food.price}` : "—"
+                            )}
                           </td>
 
                           {/* Delivery Time */}
@@ -168,41 +261,28 @@ const FoodManagement = () => {
                             {deliveryFee}
                           </td>
 
-                          {/* Price */}
-                          <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
-                            {price}
-                          </td>
-
-                          {/* Description */}
-                          <td className="py-4 text-sm text-gray-600 whitespace-nowrap truncate max-w-[200px]" title={description}>
-                            {description}
-                          </td>
-
                           {/* Status */}
-                          <td className="py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                                status === "Available"
-                                  ? "bg-green-50 text-green-600"
-                                  : "bg-red-50 text-red-500"
-                              }`}
-                            >
-                              {status}
+                          <td className="py-4 text-sm whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              food.status === "AVAILABLE"
+                                ? "bg-green-50 text-green-600"
+                                : "bg-red-50 text-red-500"
+                            }`}>
+                              {food.status === "AVAILABLE" ? "Available" : "Unavailable"}
                             </span>
                           </td>
 
-                          {/* Action */}
-                          <td className="py-4 text-right whitespace-nowrap">
-                            <button className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
-                              <MoreVertical size={16} />
-                            </button>
-                          </td>
+                          {/* Action popover */}
+                          <ActionCell
+                            onView={() => setViewFood(food)}
+                            onEdit={() => setEditFood(food)}
+                          />
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan="8" className="py-10 text-center text-sm text-gray-400">
+                      <td colSpan="7" className="py-10 text-center text-sm text-gray-400">
                         No food items found
                       </td>
                     </tr>
@@ -211,7 +291,7 @@ const FoodManagement = () => {
               </table>
             </TableScrollWrapper>
 
-            {/* Pagination Controls — Leads style */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-end items-center gap-1.5 mt-5">
                 <button
@@ -247,10 +327,27 @@ const FoodManagement = () => {
             )}
           </div>
 
-          {isModalOpen && (
+          {/* ── Modals ── */}
+          {isAddOpen && (
             <AddFoodModal
-              onClose={() => setIsModalOpen(false)}
-              onCreate={handleAddFood}
+              onClose={() => setIsAddOpen(false)}
+              onCreated={() => { refetch(); }}
+            />
+          )}
+
+          {viewFood && (
+            <ViewFoodModal
+              food={viewFood}
+              onClose={() => setViewFood(null)}
+              onEdit={(f) => { setViewFood(null); setEditFood(f); }}
+            />
+          )}
+
+          {editFood && (
+            <EditFoodModal
+              food={editFood}
+              onClose={() => setEditFood(null)}
+              onUpdated={async () => { await refetch(); setEditFood(null); }}
             />
           )}
         </>

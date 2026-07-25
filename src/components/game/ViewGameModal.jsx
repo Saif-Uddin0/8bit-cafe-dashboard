@@ -7,6 +7,107 @@ import {
 
 const WEEKDAY_ORDER = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
+const normalizeTime = (timeStr) => {
+  if (!timeStr) return "";
+  if (timeStr.includes("T")) {
+    try {
+      const timePart = timeStr.split("T")[1];
+      if (timePart) {
+        const parts = timePart.split(":");
+        let hours = parseInt(parts[0], 10);
+        const minutes = parts[1] || "00";
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        if (hours === 0) hours = 12;
+        return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  const cleaned = timeStr.replace(/\s+/g, "").toUpperCase();
+  const match = cleaned.match(/^(\d{1,2}):?(\d{2})(AM|PM)?$/) || cleaned.match(/^(\d{1,2})(AM|PM)$/);
+  if (!match) return timeStr.trim();
+  
+  const hours = match[1];
+  const minutes = match[2] || "00";
+  const ampm = match[3] || "";
+  
+  if (ampm) {
+    return `${hours}:${minutes} ${ampm}`;
+  }
+  return `${hours}:${minutes}`;
+};
+
+const groupSchedules = (schedules) => {
+  if (!schedules || schedules.length === 0) return [];
+  
+  const groups = [];
+  let currentGroup = null;
+
+  schedules.forEach((s) => {
+    const timeKey = `${normalizeTime(s.openTime)} - ${normalizeTime(s.endTime)}`;
+    
+    if (!currentGroup) {
+      currentGroup = {
+        days: [s.day],
+        timeKey,
+        openTime: s.openTime,
+        endTime: s.endTime
+      };
+    } else if (currentGroup.timeKey === timeKey) {
+      currentGroup.days.push(s.day);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = {
+        days: [s.day],
+        timeKey,
+        openTime: s.openTime,
+        endTime: s.endTime
+      };
+    }
+  });
+  
+  if (currentGroup) {
+    groups.push(currentGroup);
+  }
+
+  return groups.map((g) => {
+    let dayStr = "";
+    const isWeekdays = g.days.length === 5 && 
+      g.days.includes("MONDAY") && 
+      g.days.includes("TUESDAY") && 
+      g.days.includes("WEDNESDAY") && 
+      g.days.includes("THURSDAY") && 
+      g.days.includes("FRIDAY");
+      
+    if (g.days.length === 7) {
+      dayStr = "Every Day";
+    } else if (isWeekdays) {
+      dayStr = "Weekdays (Mon - Fri)";
+    } else if (g.days.length === 2 && g.days.includes("SATURDAY") && g.days.includes("SUNDAY")) {
+      dayStr = "Weekends (Sat - Sun)";
+    } else {
+      const indices = g.days.map(d => WEEKDAY_ORDER.indexOf(d));
+      const isConsecutive = indices.every((val, i) => i === 0 || val === indices[i - 1] + 1);
+      
+      const formatDay = (day) => day.charAt(0) + day.slice(1, 3).toLowerCase();
+
+      if (isConsecutive && g.days.length > 2) {
+        dayStr = `${formatDay(g.days[0])} - ${formatDay(g.days[g.days.length - 1])}`;
+      } else {
+        dayStr = g.days.map(formatDay).join(", ");
+      }
+    }
+
+    return {
+      dayStr,
+      openTime: g.openTime,
+      endTime: g.endTime
+    };
+  });
+};
+
 const ViewGameModal = ({ game, onClose, onEdit }) => {
   // Lock body scroll & close on Escape
   useEffect(() => {
@@ -21,7 +122,7 @@ const ViewGameModal = ({ game, onClose, onEdit }) => {
 
   if (!game) return null;
 
-  const image = Array.isArray(game.images) && game.images.length > 0 ? game.images[0] : null;
+  const image = Array.isArray(game.images) && game.images.length > 0 ? (typeof game.images[0] === "object" ? game.images[0]?.url : game.images[0]) : null;
   const isAvailable = game.status === "AVAILABLE" || game.status === "Available";
 
   // Sort schedules in weekday order
@@ -141,14 +242,16 @@ const ViewGameModal = ({ game, onClose, onEdit }) => {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Operating Hours</p>
               </div>
               <div className="space-y-1.5">
-                {sortedSchedules.map((s) => (
-                  <div key={s.id ?? s.day} className="flex items-center gap-3 px-3 py-2 bg-[#532C89]/5 border border-[#532C89]/15 rounded-xl">
-                    <CalendarDays size={13} className="text-[#532C89] shrink-0" />
-                    <span className="text-xs font-semibold text-[#532C89] w-24 shrink-0 capitalize">
-                      {s.day.charAt(0) + s.day.slice(1).toLowerCase()}
-                    </span>
-                    <span className="text-xs text-gray-600 font-medium">
-                      {s.openTime} → {s.endTime}
+                {groupSchedules(sortedSchedules).map((g, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-[#532C89]/5 border border-[#532C89]/10 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CalendarDays size={13} className="text-[#532C89] shrink-0" />
+                      <span className="text-xs font-bold text-gray-800 truncate">
+                        {g.dayStr}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-[#532C89] bg-[#532C89]/10 px-2.5 py-1 rounded-lg shrink-0">
+                      {normalizeTime(g.openTime)} – {normalizeTime(g.endTime)}
                     </span>
                   </div>
                 ))}
@@ -179,7 +282,7 @@ const ViewGameModal = ({ game, onClose, onEdit }) => {
           </button>
           <button
             onClick={() => { onClose(); onEdit(game); }}
-            className="px-6 py-2.5 bg-[#532C89] hover:bg-[#6C04D7] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
+            className="px-6 py-2.5 bg-[#000000] hover:bg-[#1E2939] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
           >
             <Gamepad2 size={14} />
             Edit Game
