@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { X, Upload, Clock, Gamepad2, ImageIcon } from "lucide-react";
+import { X, Upload, Clock, Gamepad2, Trash2, RefreshCw, Plus, CheckCircle } from "lucide-react";
 
 const WEEKDAYS = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 const defaultSchedule = { openTime: "09:00 AM", endTime: "05:00 PM" };
@@ -160,12 +160,91 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
   const [name, setName] = useState(game?.name ?? "");
   const [description, setDescription] = useState(game?.description ?? "");
   const [categoryId, setCategoryId] = useState(game?.categoryId ?? game?.category?.id ?? "");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(
-    Array.isArray(game?.images) && game.images.length > 0
-      ? (typeof game.images[0] === "object" ? game.images[0]?.url : game.images[0])
-      : null
+
+  // ── Multi-image state (mirrors EditFoodModal pattern) ─────────────────────
+  const addFileInputRef     = useRef(null);
+  const replaceFileInputRef = useRef(null);
+  const [replacingId, setReplacingId] = useState(null);
+  const [imagesList, setImagesList] = useState(() =>
+    (game?.images || []).map((img, i) => ({
+      id:       `orig-${i}`,
+      type:     "existing",
+      url:      typeof img === "object" ? img?.url : img,
+      publicId: typeof img === "object" ? img?.publicId : null,
+      deleted:  false,
+    }))
   );
+  const [deletedPublicIds, setDeletedPublicIds] = useState([]);
+
+  // Revoke blob URLs on unmount
+  useEffect(() => {
+    const captured = imagesList;
+    return () => {
+      captured.forEach((img) => {
+        if (img.type === "new" && img.preview) URL.revokeObjectURL(img.preview);
+      });
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAddFiles = (files) => {
+    const valid = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (!valid.length) return;
+    const items = valid.map((file, idx) => ({
+      id:      `new-${Date.now()}-${idx}`,
+      type:    "new",
+      file,
+      preview: URL.createObjectURL(file),
+      deleted: false,
+    }));
+    setImagesList((prev) => [...prev, ...items].slice(0, 10));
+  };
+
+  const deleteImage = (id) => {
+    const target = imagesList.find((img) => img.id === id);
+    if (target && target.type === "existing" && target.publicId) {
+      setDeletedPublicIds((prev) => [...prev, target.publicId]);
+    }
+    setImagesList((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        if (img.type === "new" && img.preview) URL.revokeObjectURL(img.preview);
+        return img.type === "new" ? null : { ...img, deleted: true };
+      }).filter(Boolean)
+    );
+  };
+
+  const triggerReplace = (id) => {
+    setReplacingId(id);
+    replaceFileInputRef.current.value = "";
+    replaceFileInputRef.current.click();
+  };
+
+  const handleReplaceFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !replacingId) return;
+    const newItem = {
+      id:      `new-${Date.now()}`,
+      type:    "new",
+      file,
+      preview: URL.createObjectURL(file),
+      deleted: false,
+    };
+    const target = imagesList.find((img) => img.id === replacingId);
+    if (target && target.type === "existing" && target.publicId) {
+      setDeletedPublicIds((prev) => [...prev, target.publicId]);
+    }
+    setImagesList((prev) =>
+      prev.map((img) => {
+        if (img.id !== replacingId) return img;
+        if (img.type === "new" && img.preview) URL.revokeObjectURL(img.preview);
+        return newItem;
+      })
+    );
+    setReplacingId(null);
+    e.target.value = "";
+  };
+
+  const visibleImages = imagesList.filter((img) => !img.deleted);
 
   const [slot30, setSlot30] = useState(game?.price30Min != null);
   const [slot60, setSlot60] = useState(game?.price60Min != null);
@@ -277,12 +356,7 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
     };
   }, [onClose]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  };
+
 
   const toggleDay = (day) => {
     setEnabledDays((prev) => ({ ...prev, [day]: !prev[day] }));
@@ -319,7 +393,13 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
     formData.append("name", name.trim());
     formData.append("description", description.trim());
     formData.append("categoryId", categoryId);
-    if (imageFile) formData.append("images", imageFile);
+    // Only append new image files; existing images are retained by backend
+    visibleImages.forEach((img) => {
+      if (img.type === "new") formData.append("images", img.file);
+    });
+    if (deletedPublicIds.length > 0) {
+      formData.append("deletePublicIds", JSON.stringify(deletedPublicIds));
+    }
     const numericDiscount = parseFloat(discountPercent);
     const hasDiscount = isDiscount && !isNaN(numericDiscount) && numericDiscount > 0;
     formData.append("isDiscount", hasDiscount ? "true" : "false");
@@ -411,28 +491,92 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
               </div>
             </div>
 
-            {/* Row 2: Image Upload */}
+            {/* Row 2: Multi-Image Management */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Game Image <span className="text-gray-400 normal-case font-normal">(leave blank to keep current)</span>
+                Game Images <span className="text-gray-400 normal-case font-normal">({visibleImages.length})</span>
               </label>
-              <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-3.5 cursor-pointer hover:bg-gray-50 transition-all group ${errors.image ? "border-red-400 bg-red-50/30" : "border-gray-200 hover:border-[#532C89]/40"}`}>
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0" />
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-gray-100 group-hover:bg-[#532C89]/10 flex items-center justify-center text-gray-300 group-hover:text-[#532C89]/50 transition-all shrink-0">
-                    <ImageIcon size={22} />
-                  </div>
+
+              <div className="flex flex-wrap gap-2.5 mb-2">
+                {visibleImages.map((item) => {
+                  const src = item.type === "existing" ? item.url : item.preview;
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative group w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm shrink-0"
+                    >
+                      <img
+                        src={src}
+                        alt="game"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = "none"; }}
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/55 transition-all flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => triggerReplace(item.id)}
+                          title="Replace"
+                          className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white flex items-center justify-center text-gray-700 cursor-pointer shadow transition"
+                        >
+                          <RefreshCw size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteImage(item.id)}
+                          title="Delete"
+                          className="w-7 h-7 rounded-lg bg-red-500 hover:bg-red-600 flex items-center justify-center text-white cursor-pointer shadow transition"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      {item.type === "new" && (
+                        <span className="absolute bottom-1 left-1 text-[8px] font-bold bg-[#532C89] text-white px-1 rounded leading-tight pointer-events-none">
+                          NEW
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* + Add tile */}
+                {visibleImages.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={() => addFileInputRef.current?.click()}
+                    className="w-[72px] h-[72px] rounded-xl border-2 border-dashed border-gray-300 hover:border-[#532C89]/60 hover:bg-[#532C89]/5 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-[#532C89] transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus size={20} />
+                    <span className="text-[9px] font-bold leading-none">ADD</span>
+                  </button>
                 )}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-600 flex items-center gap-1.5 truncate">
-                    <Upload size={13} />
-                    {imageFile ? imageFile.name : imagePreview ? "Click to replace image" : "Click to upload image"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP supported</p>
+              </div>
+
+              {/* Empty / drag-drop zone */}
+              {visibleImages.length === 0 && (
+                <div
+                  onClick={() => addFileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => { e.preventDefault(); handleAddFiles(e.dataTransfer.files); }}
+                  className="border-2 border-dashed border-red-300 rounded-xl p-5 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-[#532C89]/50 bg-red-50/40"
+                >
+                  <Upload size={20} className="text-red-400" />
+                  <p className="text-xs font-semibold text-red-500">No images — add at least one</p>
+                  <p className="text-[10px] text-gray-400">JPG, PNG, WEBP</p>
                 </div>
-              </label>
+              )}
+
+              {/* Full-width drag-drop zone */}
+              <div
+                onClick={() => addFileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); handleAddFiles(e.dataTransfer.files); }}
+                className="border-2 border-dashed border-gray-200 hover:border-[#532C89]/50 rounded-xl py-3 flex items-center justify-center gap-2 cursor-pointer transition-all text-gray-400 hover:text-[#532C89] mt-1"
+              >
+                <Upload size={15} />
+                <span className="text-xs font-semibold">Click or drag to upload images</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">Hover an image to replace or delete. Click <strong>ADD</strong> to upload more.</p>
             </div>
 
             {/* Row 3: Description */}
@@ -514,36 +658,33 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
               />
             </div>
 
-            {/* Row 5b: Status toggle */}
+            {/* Row 5b: Status — card-style buttons matching EditFoodModal */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Availability Status
+                Status
               </label>
-              <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-xl w-fit">
-                <button
-                  type="button"
-                  onClick={() => setStatus("AVAILABLE")}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    status === "AVAILABLE"
-                      ? "bg-green-500 text-white shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${status === "AVAILABLE" ? "bg-white" : "bg-gray-400"}`} />
-                  Available
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatus("UNAVAILABLE")}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    status === "UNAVAILABLE"
-                      ? "bg-red-500 text-white shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${status === "UNAVAILABLE" ? "bg-white" : "bg-gray-400"}`} />
-                  Unavailable
-                </button>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "AVAILABLE",   label: "Available",   color: "text-green-600 bg-green-50 border-green-200" },
+                  { value: "UNAVAILABLE", label: "Unavailable", color: "text-red-600   bg-red-50   border-red-200"   },
+                ].map((s) => {
+                  const active = status === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setStatus(s.value)}
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
+                        active
+                          ? `${s.color} ring-2 ring-offset-1 ring-current`
+                          : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
+                      }`}
+                    >
+                      <span>{s.label}</span>
+                      {active && <CheckCircle size={15} className="shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -716,6 +857,23 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
           </button>
         </div>
       </div>
+
+      {/* ── Hidden file inputs ── */}
+      <input
+        ref={addFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => { handleAddFiles(e.target.files); e.target.value = ""; }}
+      />
+      <input
+        ref={replaceFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleReplaceFile}
+      />
 
       <style>{`
         @keyframes modalIn {

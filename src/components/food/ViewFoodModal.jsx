@@ -31,7 +31,7 @@ const ViewFoodModal = ({ food, onClose, onEdit }) => {
   if (!food) return null;
 
   const images = Array.isArray(food.images) ? food.images : [];
-  const isAvailable = !food.isDelete && food.status !== "Un-available";
+  const isAvailable = !food.isDelete && food.status !== "UNAVAILABLE";
   const categoryName =
     typeof food.category === "object" ? food.category?.name : food.category;
   
@@ -168,7 +168,7 @@ const ViewFoodModal = ({ food, onClose, onEdit }) => {
                 {images.map((src, i) => (
                   <img
                     key={i}
-                    src={src}
+                    src={typeof src === "object" ? src?.url : src}
                     alt={`img-${i}`}
                     className="w-16 h-16 rounded-xl object-cover border border-gray-200"
                   />

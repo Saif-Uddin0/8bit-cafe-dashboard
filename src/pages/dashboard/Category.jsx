@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Search, MoreVertical, Pencil, Trash2, X, LayoutGrid } from "lucide-react";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import CategoryStatCards from "../../components/category/CategoryStatCards";
 import CreateCategoryModal from "../../components/category/CreateCategoryModal";
@@ -8,6 +8,75 @@ import EditCategoryModal from "../../components/category/EditCategoryModal";
 import useAxiosSecure from "../../hooks/useAxios";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
+
+// ── ActionCell — same popover pattern as Game/Food pages ────────────────────────
+// Note: categories have no View, so we expose Edit + Delete in the popover.
+const ActionCell = ({ onEdit, onDelete }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <td className="py-4 text-right whitespace-nowrap">
+      <div ref={ref} className="relative inline-block">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {open && (
+          <div
+            className="absolute right-0 top-9 z-50 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2"
+            style={{ animation: "popIn 0.15s ease-out" }}
+          >
+            {/* Edit */}
+            <button
+              onClick={() => { setOpen(false); onEdit(); }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black text-black hover:bg-black hover:text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Pencil size={11} />
+              Edit
+            </button>
+
+            {/* Delete */}
+            <button
+              onClick={() => { setOpen(false); onDelete(); }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Trash2 size={11} />
+              Delete
+            </button>
+
+            {/* Close */}
+            <button
+              onClick={() => setOpen(false)}
+              className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all cursor-pointer ml-0.5"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.9) translateY(-4px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </td>
+  );
+};
 
 const Category = () => {
   const axiosSecure = useAxiosSecure();
@@ -128,9 +197,10 @@ const Category = () => {
           <div className="flex justify-end">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
             >
-              Create Category
+              <LayoutGrid size={16} />
+              <span>Create Category</span>
             </button>
           </div>
 
@@ -202,49 +272,13 @@ const Category = () => {
                             </span>
                           </td>
 
-                          {/*
-                            ACTION CELL — uses INLINE toggle buttons instead of
-                            absolute dropdown, which would be clipped by
-                            TableScrollWrapper's overflow-x:auto container.
-                          */}
-                          <td className="py-3 text-right">
-                            {isOpen ? (
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => {
-                                    setEditingCategory(cat);
-                                    setActiveRow(null);
-                                  }}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#532C89] text-white hover:bg-[#6C04D7] rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Pencil size={11} />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteCategory(cat)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Trash2 size={11} />
-                                  Delete
-                                </button>
-                                <button
-                                  onClick={() => setActiveRow(null)}
-                                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-xs font-bold"
-                                  title="Cancel"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setActiveRow(rowId)}
-                                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                                title="Actions"
-                              >
-                                <MoreVertical size={16} />
-                              </button>
-                            )}
-                          </td>
+                        <ActionCell
+                            onEdit={() => {
+                              setEditingCategory(cat);
+                              setActiveRow(null);
+                            }}
+                            onDelete={() => handleDeleteCategory(cat)}
+                          />
                         </tr>
                       );
                     })

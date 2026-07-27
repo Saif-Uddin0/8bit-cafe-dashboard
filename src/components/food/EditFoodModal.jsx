@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { X, Upload, Utensils, Trash2, RefreshCw, Plus, CheckCircle } from "lucide-react";
 import useAxiosSecure from "../../hooks/useAxios";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
 // ── Food status values matching backend exactly ──────────────────────────────────
 const FOOD_STATUSES = [
-  { value: "AVAILABLE",    label: "Available",   color: "text-green-600 bg-green-50 border-green-200" },
-  { value: "Un-available", label: "Unavailable", color: "text-red-600   bg-red-50   border-red-200"   },
+  { value: "AVAILABLE",   label: "Available",   color: "text-green-600 bg-green-50 border-green-200" },
+  { value: "UNAVAILABLE", label: "Unavailable", color: "text-red-600   bg-red-50   border-red-200"   },
 ];
 
 const FIELD = ({ label, error, children }) => (
@@ -27,15 +28,41 @@ const inputCls = (err) =>
 // ── Main component ───────────────────────────────────────────────────────────────
 const EditFoodModal = ({ food, onClose, onUpdated }) => {
   const axiosSecure         = useAxiosSecure();
-  const addFileInputRef     = useRef(null);   
-  const replaceFileInputRef = useRef(null);  
-  const [replacingId, setReplacingId] = useState(null); 
+  const addFileInputRef     = useRef(null);
+  const replaceFileInputRef = useRef(null);
+  const [replacingId, setReplacingId] = useState(null);
+
+  // ── Fetch food categories ──────────────────────────────────────────────────────
+  const { data: categories = [] } = useQuery({
+    queryKey: ["foodCategories"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/api/category/getCategories?type=FOOD&limit=100");
+      const b = res.data;
+      if (Array.isArray(b?.data?.data)) return b.data.data;
+      if (Array.isArray(b?.data))       return b.data;
+      return [];
+    },
+  });
 
   // ── Scalar fields ─────────────────────────────────────────────────────────────
+  const normalizeStatus = (s) => {
+    if (!s) return "AVAILABLE";
+    const up = s.toUpperCase().replace(/[-_\s]/g, "");
+    if (up === "AVAILABLE") return "AVAILABLE";
+    return "UNAVAILABLE";
+  };
+
+  // Resolve category id from the food object (can be a nested object or a plain id string)
+  const resolvedCategoryId = food?.categoryId ?? food?.category?.id ?? food?.category?._id ?? "";
+
   const [form, setForm] = useState({
-    delivery_time: food?.delivery_time ?? food?.deliveryTime ?? "",
-    delivery_fee:  food?.delivery_fee  ?? food?.deliveryFee  ?? "",
-    status:        food?.status        ?? "AVAILABLE",
+    name:              food?.name              ?? "",
+    price:             food?.price             ?? "",
+    categoryId:        resolvedCategoryId,
+    short_description: food?.short_description ?? food?.shortDescription ?? "",
+    delivery_time:     food?.delivery_time     ?? food?.deliveryTime     ?? "",
+    delivery_fee:      food?.delivery_fee      ?? food?.deliveryFee      ?? "",
+    status:            normalizeStatus(food?.status),
   });
 
   // ── Discount ──────────────────────────────────────────────────────────────────
@@ -47,16 +74,18 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     food?.discountPercentage ?? food?.discountParcenTage ?? ""
   );
 
-  
+  // ── Images ────────────────────────────────────────────────────────────────────
   const [imagesList, setImagesList] = useState(() =>
     (food?.images || []).map((img, i) => ({
-      id:      `orig-${i}`,
-      type:    "existing",
-      url:     typeof img === "object" ? img?.url : img,
-      deleted: false,
+      id:       `orig-${i}`,
+      type:     "existing",
+      url:      typeof img === "object" ? img?.url : img,
+      publicId: typeof img === "object" ? img?.publicId : null,
+      deleted:  false,
     }))
   );
 
+  const [deletedPublicIds, setDeletedPublicIds] = useState([]);
   const [errors,  setErrors]  = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -115,6 +144,10 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
 
   // Soft-delete: mark deleted so it's excluded from the PATCH payload
   const deleteImage = (id) => {
+    const target = imagesList.find((img) => img.id === id);
+    if (target && target.type === "existing" && target.publicId) {
+      setDeletedPublicIds((prev) => [...prev, target.publicId]);
+    }
     setImagesList((prev) =>
       prev.map((img) => {
         if (img.id !== id) return img;
@@ -143,6 +176,11 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
       deleted: false,
     };
 
+    const target = imagesList.find((img) => img.id === replacingId);
+    if (target && target.type === "existing" && target.publicId) {
+      setDeletedPublicIds((prev) => [...prev, target.publicId]);
+    }
+
     setImagesList((prev) =>
       prev.map((img) => {
         if (img.id !== replacingId) return img;
@@ -160,6 +198,12 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
   // ── Validation ────────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
+    if (!form.name.trim())
+      e.name = "Food name is required";
+    if (!form.price || isNaN(Number(form.price)))
+      e.price = "Valid price is required";
+    if (!form.categoryId)
+      e.categoryId = "Category is required";
     if (!form.delivery_time || isNaN(Number(form.delivery_time)))
       e.delivery_time = "Delivery time (mins) is required";
     if (!form.delivery_fee || isNaN(Number(form.delivery_fee)))
@@ -175,13 +219,18 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
   const buildPayload = () => {
     const fd = new FormData();
 
-    fd.append("delivery_time", form.delivery_time);
-    fd.append("delivery_fee",  form.delivery_fee);
-    fd.append("status",        form.status);
+    // Core fields
+    fd.append("name",              form.name.trim());
+    fd.append("price",             form.price);
+    fd.append("categoryId",        form.categoryId);
+    fd.append("short_description", form.short_description.trim());
+    fd.append("delivery_time",     form.delivery_time);
+    fd.append("delivery_fee",      form.delivery_fee);
+    fd.append("status",            form.status);
 
-    // Discount
-    const n         = parseFloat(discountPercent);
-    const hasDisc   = isDiscount && !isNaN(n) && n > 0;
+    // Discount (all casing variants the backend might accept)
+    const n       = parseFloat(discountPercent);
+    const hasDisc = isDiscount && !isNaN(n) && n > 0;
     fd.append("isDisCount",         hasDisc ? "true" : "false");
     fd.append("isDiscount",         hasDisc ? "true" : "false");
     fd.append("disCountParcentage", hasDisc ? String(n) : "0");
@@ -191,12 +240,15 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     fd.append("disCountParcenTage", hasDisc ? String(n) : "0");
     fd.append("discountParcenTage", hasDisc ? String(n) : "0");
 
-    // Images — ALWAYS send the complete final set so backend knows what to keep.
-    // Existing images are sent as URL strings; new images are sent as File blobs.
+    // Images — ONLY send the new image files to add.
+    // Existing images are retained by the backend unless specified in deletePublicIds.
     visibleImages.forEach((img) => {
-      if (img.type === "existing") fd.append("images", img.url);
-      else                          fd.append("images", img.file);
+      if (img.type === "new") fd.append("images", img.file);
     });
+
+    if (deletedPublicIds.length > 0) {
+      fd.append("deletePublicIds", JSON.stringify(deletedPublicIds));
+    }
 
     return fd;
   };
@@ -260,7 +312,55 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
         <div className="overflow-y-auto flex-1 px-5 py-4">
           <form id="edit-food-form" onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Delivery Time + Fee */}
+            {/* ── Row 1: Name + Price ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <FIELD label="Food Name" error={errors.name}>
+                <input
+                  type="text"
+                  placeholder="Enter name"
+                  value={form.name}
+                  onChange={setField("name")}
+                  className={inputCls(errors.name)}
+                />
+              </FIELD>
+              <FIELD label="Price (৳)" error={errors.price}>
+                <input
+                  type="number"
+                  placeholder="e.g. 250"
+                  value={form.price}
+                  onChange={setField("price")}
+                  min="0"
+                  className={inputCls(errors.price)}
+                />
+              </FIELD>
+            </div>
+
+            {/* ── Row 2: Category ── */}
+            <FIELD label="Category" error={errors.categoryId}>
+              <select
+                value={form.categoryId}
+                onChange={setField("categoryId")}
+                className={`${inputCls(errors.categoryId)} cursor-pointer`}
+              >
+                <option value="" disabled>Select category</option>
+                {categories.map((c) => (
+                  <option key={c.id ?? c._id} value={c.id ?? c._id}>{c.name}</option>
+                ))}
+              </select>
+            </FIELD>
+
+            {/* ── Row 3: Short Description ── */}
+            <FIELD label="Short Description">
+              <input
+                type="text"
+                placeholder="Enter short description"
+                value={form.short_description}
+                onChange={setField("short_description")}
+                className={inputCls(false)}
+              />
+            </FIELD>
+
+            {/* ── Row 4: Delivery Time + Fee ── */}
             <div className="grid grid-cols-2 gap-3">
               <FIELD label="Delivery Time (mins)" error={errors.delivery_time}>
                 <input
@@ -284,7 +384,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
               </FIELD>
             </div>
 
-            {/* Status */}
+            {/* ── Row 5: Status ── */}
             <FIELD label="Status">
               <div className="grid grid-cols-2 gap-2">
                 {FOOD_STATUSES.map((s) => {
@@ -308,7 +408,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
               </div>
             </FIELD>
 
-            {/* Discount toggle */}
+            {/* ── Row 6: Discount toggle ── */}
             <div className="flex items-center gap-3 p-3.5 bg-gray-50 border border-gray-200 rounded-xl">
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
@@ -344,7 +444,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
               </FIELD>
             )}
 
-            {/* ── Image Management ──────────────────────────────────────────────── */}
+            {/* ── Row 7: Image Management ── */}
             <FIELD label={`Images (${visibleImages.length})`} error={errors.images}>
 
               {/* Grid of current images */}
@@ -453,7 +553,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
             type="submit"
             form="edit-food-form"
             disabled={loading}
-            className="px-6 py-2.5 bg-[#532C89] hover:bg-[#6C04D7] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md disabled:opacity-60"
+            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md disabled:opacity-60"
           >
             {loading ? (
               <>

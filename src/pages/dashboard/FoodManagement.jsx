@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, Utensils, ChevronLeft, ChevronRight,
-  MoreVertical, Eye, Pencil, X,
+  MoreVertical, Eye, Pencil, X, Loader2,
 } from "lucide-react";
 import FoodStatCards from "../../components/food/FoodStatCards";
 import AddFoodModal from "../../components/food/AddFoodModal";
@@ -10,6 +10,7 @@ import ViewFoodModal from "../../components/food/ViewFoodModal";
 import EditFoodModal from "../../components/food/EditFoodModal";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import useAxiosSecure from "../../hooks/useAxios";
+import { toast } from "react-hot-toast";
 
 // ── ActionCell — identical pattern to GameManagement ────────────────────────────
 const ActionCell = ({ onView, onEdit }) => {
@@ -119,6 +120,35 @@ const FoodManagement = () => {
   const totalItems = meta?.total ?? foods.length;
   const totalPages = meta?.totalPage || Math.ceil(totalItems / 10) || 1;
   const activePage = Math.min(currentPage, Math.max(totalPages, 1));
+
+  // ── Inline status toggle ────────────────────────────────────────────────────
+  const [statusUpdating, setStatusUpdating] = useState({}); // { [foodId]: true }
+
+  const handleToggleStatus = async (food) => {
+    const id = food.id ?? food._id;
+    const currentStatus = food.status;
+    const isCurrentlyAvailable =
+      currentStatus === "AVAILABLE" || currentStatus === "Available";
+    const newStatus = isCurrentlyAvailable ? "UNAVAILABLE" : "AVAILABLE";
+
+    setStatusUpdating((prev) => ({ ...prev, [id]: true }));
+    try {
+      const fd = new FormData();
+      fd.append("status", newStatus);
+      // Required fields the backend always needs
+      const deliveryTime = food.delivery_time ?? food.deliveryTime ?? "";
+      const deliveryFee  = food.delivery_fee  ?? food.deliveryFee  ?? "";
+      if (deliveryTime) fd.append("delivery_time", String(deliveryTime));
+      if (deliveryFee)  fd.append("delivery_fee",  String(deliveryFee));
+      await axiosSecure.patch(`/api/foods/updateFood/${id}`, fd);
+      toast.success(`Status changed to ${newStatus === "AVAILABLE" ? "Available" : "Unavailable"}`);
+      refetch();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    } finally {
+      setStatusUpdating((prev) => ({ ...prev, [id]: false }));
+    }
+  };
 
   return (
     <div className="space-y-4 max-w-[1600px] mx-auto px-2 md:px-4 pb-8">
@@ -261,15 +291,27 @@ const FoodManagement = () => {
                             {deliveryFee}
                           </td>
 
-                          {/* Status */}
+                          {/* Status — clickable inline toggle */}
                           <td className="py-4 text-sm whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                              food.status === "AVAILABLE"
-                                ? "bg-green-50 text-green-600"
-                                : "bg-red-50 text-red-500"
-                            }`}>
-                              {food.status === "AVAILABLE" ? "Available" : "Unavailable"}
-                            </span>
+                            {statusUpdating[food.id ?? food._id] ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-400">
+                                <Loader2 size={11} className="animate-spin" />
+                                Updating...
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleStatus(food)}
+                                title="Click to toggle status"
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all cursor-pointer hover:opacity-80 hover:scale-105 active:scale-95 ${
+                                  food.status === "AVAILABLE" || food.status === "Available"
+                                    ? "bg-green-50 text-green-600 hover:bg-green-100"
+                                    : "bg-red-50 text-red-500 hover:bg-red-100"
+                                }`}
+                              >
+                                {food.status === "AVAILABLE" || food.status === "Available" ? "Available" : "Unavailable"}
+                              </button>
+                            )}
                           </td>
 
                           {/* Action popover */}
