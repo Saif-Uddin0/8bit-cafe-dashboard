@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MoreVertical, Pencil, Trash2, X, LayoutGrid } from "lucide-react";
+import { Search, MoreVertical, Pencil, Trash2, X, LayoutGrid, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown } from "lucide-react";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import CategoryStatCards from "../../components/category/CategoryStatCards";
 import CreateCategoryModal from "../../components/category/CreateCategoryModal";
@@ -85,6 +85,12 @@ const Category = () => {
   const [activeRow, setActiveRow] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
 
+  // Filter and sort states
+  const [filterType, setFilterType] = useState("ALL"); // ALL | GAME | FOOD
+  const [sortBy, setSortBy] = useState("name");       // name | type
+  const [sortOrder, setSortOrder] = useState("asc");    // asc | desc
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Close action row when clicking outside the table
   const tableRef = useRef(null);
   useEffect(() => {
@@ -115,10 +121,39 @@ const Category = () => {
   // Show all categories from the API — no isDelete filtering
   const categories = Array.isArray(rawCategories) ? rawCategories : [];
 
-  // Apply search filter on top
-  const filteredCategories = categories.filter((cat) =>
-    cat.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const resetPage = () => setCurrentPage(1);
+
+  // Apply filters and sorting on the frontend
+  let processedCategories = categories.filter((cat) => {
+    const matchesSearch = cat.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === "ALL" || cat.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  processedCategories = [...processedCategories].sort((a, b) => {
+    let valA = a[sortBy] || "";
+    let valB = b[sortBy] || "";
+
+    if (sortBy === "type") {
+      valA = a.type === "GAME" ? "Games" : "Food";
+      valB = b.type === "GAME" ? "Games" : "Food";
+    }
+
+    if (sortOrder === "asc") {
+      return valA.localeCompare(valB);
+    } else {
+      return valB.localeCompare(valA);
+    }
+  });
+
+  // Frontend Pagination
+  const itemsPerPage = 10;
+  const totalItems = processedCategories.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const activePage = Math.min(currentPage, Math.max(totalPages, 1));
+
+  const startIndex = (activePage - 1) * itemsPerPage;
+  const paginatedCategories = processedCategories.slice(startIndex, startIndex + itemsPerPage);
 
   const handleCreateCategory = async (newCategory) => {
     // Map form values to API-expected uppercase type codes
@@ -205,20 +240,61 @@ const Category = () => {
           </div>
 
           <div className="bg-white border border-gray-100 rounded-[20px] p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h2 className="text-lg font-bold text-gray-900">All Category</h2>
+            {/* Filter / Sort toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <h2 className="text-lg font-bold text-gray-900">All Categories</h2>
 
-              <div className="relative w-full sm:w-64">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
-                  <Search size={16} />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
-                />
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Filter Type */}
+                <div className="relative">
+                  <select
+                    value={filterType}
+                    onChange={(e) => { setFilterType(e.target.value); resetPage(); }}
+                    className="appearance-none pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                  >
+                    <option value="ALL">All Types</option>
+                    <option value="GAME">Games Only</option>
+                    <option value="FOOD">Food Only</option>
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+
+                {/* Sort By */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); resetPage(); }}
+                    className="appearance-none pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                  >
+                    <option value="name">Sort: Name</option>
+                    <option value="type">Sort: Type</option>
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+
+                {/* Sort Order */}
+                <button
+                  onClick={() => { setSortOrder((o) => o === "asc" ? "desc" : "asc"); resetPage(); }}
+                  title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                >
+                  <ArrowUpDown size={13} />
+                  {sortOrder === "asc" ? "ASC" : "DESC"}
+                </button>
+
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                    <Search size={14} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search categories..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); resetPage(); }}
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
+                  />
+                </div>
               </div>
             </div>
 
@@ -242,8 +318,8 @@ const Category = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((cat) => {
+                  {paginatedCategories.length > 0 ? (
+                    paginatedCategories.map((cat) => {
                       const displayType =
                         cat.type === "GAME" ? "Games" :
                         cat.type === "FOOD" ? "Food" :
@@ -292,6 +368,41 @@ const Category = () => {
                 </tbody>
               </table>
             </TableScrollWrapper>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center gap-1.5 mt-5">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={activePage === 1}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {Array.from({ length: totalPages }).map((_, idx) => (
+                  <button
+                    key={idx + 1}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
+                      activePage === idx + 1
+                        ? "bg-black text-white"
+                        : "text-gray-500 hover:bg-gray-50 border border-transparent"
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={activePage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           {isModalOpen && (

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, Gamepad2, ChevronLeft, ChevronRight,
-  MoreVertical, Eye, Pencil, X,
+  MoreVertical, Eye, Pencil, X, ArrowUpDown, ChevronDown,
 } from "lucide-react";
 import GameStatCards from "../../components/game/GameStatCards";
 import AddGameModal from "../../components/game/AddGameModal";
@@ -89,17 +89,31 @@ const GameManagement = () => {
   const axiosSecure = useAxiosSecure();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("createdAt"); // createdAt | name | price30Min | price60Min
+  const [sortOrder, setSortOrder] = useState("desc");    // asc | desc
 
   // Modal states
   const [isAddOpen, setIsAddOpen]   = useState(false);
   const [viewGame, setViewGame]     = useState(null); // game object for view modal
   const [editGame, setEditGame]     = useState(null); // game object for edit modal
 
+  // Reset to page 1 whenever filters change
+  const resetPage = () => setCurrentPage(1);
+
   // ── Fetch games ──
   const { data: gameResponse, isLoading, isError, refetch } = useQuery({
-    queryKey: ["games", currentPage],
+    queryKey: ["games", currentPage, searchTerm, sortBy, sortOrder],
     queryFn: async () => {
-      const res = await axiosSecure.get(`/api/games?page=${currentPage}&limit=10`);
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: "10",
+        sortBy,
+        sortOrder,
+      });
+      if (searchTerm.trim()) {
+        params.append("searchTerm", searchTerm.trim());
+      }
+      const res = await axiosSecure.get(`/api/games?${params.toString()}`);
       return res.data;
     },
   });
@@ -111,11 +125,6 @@ const GameManagement = () => {
   const totalItems = meta?.total ?? games.length;
   const totalPages = Math.ceil(totalItems / 10) || 1;
   const activePage = Math.min(currentPage, Math.max(totalPages, 1));
-
-  const filteredGames = games.filter((game) =>
-    game.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    game.category?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   // ── Fetch game categories for modals ──
   const { data: categoryResponse } = useQuery({
@@ -206,20 +215,49 @@ const GameManagement = () => {
           </div>
 
           <div className="bg-white border border-gray-100 rounded-[20px] p-6 shadow-sm">
-            {/* Table header row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            {/* Filter / Sort toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <h2 className="text-lg font-bold text-gray-900">All Games</h2>
-              <div className="relative w-full sm:w-72">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
-                  <Search size={16} />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search by name or category"
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
-                />
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Sort By */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); resetPage(); }}
+                    className="appearance-none pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                  >
+                    <option value="createdAt">Sort: Newest</option>
+                    <option value="name">Sort: Name</option>
+                    <option value="price30Min">Sort: Price (30m)</option>
+                    <option value="price60Min">Sort: Price (60m)</option>
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+
+                {/* Sort Order */}
+                <button
+                  onClick={() => { setSortOrder((o) => o === "asc" ? "desc" : "asc"); resetPage(); }}
+                  title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                >
+                  <ArrowUpDown size={13} />
+                  {sortOrder === "asc" ? "ASC" : "DESC"}
+                </button>
+
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                    <Search size={14} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search games..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); resetPage(); }}
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
+                  />
+                </div>
               </div>
             </div>
 
@@ -236,8 +274,8 @@ const GameManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredGames.length > 0 ? (
-                    filteredGames.map((game) => {
+                  {games.length > 0 ? (
+                    games.map((game) => {
                       const gameImage = Array.isArray(game.images) && game.images.length > 0
                         ? (typeof game.images[0] === "object" ? game.images[0]?.url : game.images[0])
                         : null;
