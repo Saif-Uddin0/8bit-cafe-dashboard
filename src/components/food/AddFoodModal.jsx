@@ -368,13 +368,9 @@ const AddFoodModal = ({ onClose, onCreated }) => {
             type="submit"
             form="add-food-form"
             disabled={loading}
-            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors w-[120px] flex items-center justify-center gap-2"
+            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors w-[120px] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {loading ? (
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Create"
-            )}
+            Create
           </button>
         </div>
       </div>

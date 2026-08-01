@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Gamepad2, ChevronLeft, ChevronRight,
   MoreVertical, Eye, Pencil, X, ArrowUpDown, ChevronDown,
@@ -87,6 +87,7 @@ const ActionCell = ({ onView, onEdit }) => {
 
 const GameManagement = () => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("createdAt"); // createdAt | name | price30Min | price60Min
@@ -116,7 +117,25 @@ const GameManagement = () => {
       const res = await axiosSecure.get(`/api/games?${params.toString()}`);
       return res.data;
     },
+    placeholderData: keepPreviousData,
   });
+
+  // ── Fetch all games for stats ──
+  const { data: allGamesResponse } = useQuery({
+    queryKey: ["games", "stats"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/api/games?limit=10000");
+      return res.data;
+    },
+  });
+
+  const allGamesBody = allGamesResponse?.data ?? {};
+  const allGamesForStats = Array.isArray(allGamesBody?.data) ? allGamesBody.data : [];
+
+  const refreshData = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["games", "stats"] });
+  };
 
   const body  = gameResponse?.data ?? {};
   const meta  = body?.meta ?? {};
@@ -158,7 +177,7 @@ const GameManagement = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(res.data?.message || "Game added successfully!");
-      refetch();
+      refreshData();
     } catch (err) {
       showApiError(err);
       throw err;
@@ -171,7 +190,7 @@ const GameManagement = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(res.data?.message || "Game updated successfully!");
-      refetch();
+      refreshData();
     } catch (err) {
       showApiError(err);
       throw err;
@@ -183,7 +202,7 @@ const GameManagement = () => {
     try {
       const res = await axiosSecure.delete(`/api/games/${gameId}`);
       toast.success(res.data?.message || "Game deleted successfully!");
-      refetch();
+      refreshData();
     } catch (err) {
       showApiError(err);
     }
@@ -202,7 +221,7 @@ const GameManagement = () => {
         </div>
       ) : (
         <>
-          <GameStatCards games={games} />
+          <GameStatCards games={allGamesForStats} />
 
           <div className="flex justify-end mt-4">
             <button

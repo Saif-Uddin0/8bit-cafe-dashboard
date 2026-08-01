@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Utensils, ChevronLeft, ChevronRight,
   MoreVertical, Eye, Pencil, X, Loader2, ArrowUpDown, ChevronDown,
@@ -85,6 +85,7 @@ const ActionCell = ({ onView, onEdit }) => {
 
 const FoodManagement = () => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy,    setSortBy]    = useState("createdAt"); // price | name | createdAt
@@ -109,7 +110,29 @@ const FoodManagement = () => {
       const res = await axiosSecure.get(`/api/foods/getFoods?${params.toString()}`);
       return res.data;
     },
+    placeholderData: keepPreviousData,
   });
+
+  // ── Fetch all foods for stats ──
+  const { data: allFoodsResponse } = useQuery({
+    queryKey: ["foods", "stats"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/api/foods/getFoods?limit=10000");
+      return res.data;
+    },
+  });
+
+  const allFoodsBody = allFoodsResponse?.data ?? allFoodsResponse ?? {};
+  const allFoodsForStats = Array.isArray(allFoodsBody?.data)
+    ? allFoodsBody.data
+    : Array.isArray(allFoodsBody)
+    ? allFoodsBody
+    : [];
+
+  const refreshData = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["foods", "stats"] });
+  };
 
   // Normalise nested response shape
   const body  = foodResponse?.data ?? foodResponse ?? {};
@@ -148,7 +171,8 @@ const FoodManagement = () => {
       if (deliveryFee)  fd.append("delivery_fee",  String(deliveryFee));
       await axiosSecure.patch(`/api/foods/updateFood/${id}`, fd);
       toast.success(`Status changed to ${newStatus === "AVAILABLE" ? "Available" : "Unavailable"}`);
-      refetch();
+      refreshData();
+
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update status");
     } finally {
@@ -169,7 +193,7 @@ const FoodManagement = () => {
         </div>
       ) : (
         <>
-          <FoodStatCards foods={foods} />
+          <FoodStatCards foods={allFoodsForStats} />
 
           {/* Add Food button */}
           <div className="flex justify-end mt-4">
@@ -407,7 +431,7 @@ const FoodManagement = () => {
           {isAddOpen && (
             <AddFoodModal
               onClose={() => setIsAddOpen(false)}
-              onCreated={() => { refetch(); }}
+              onCreated={() => { refreshData(); }}
             />
           )}
 
@@ -423,9 +447,10 @@ const FoodManagement = () => {
             <EditFoodModal
               food={editFood}
               onClose={() => setEditFood(null)}
-              onUpdated={async () => { await refetch(); setEditFood(null); }}
+              onUpdated={async () => { await refreshData(); setEditFood(null); }}
             />
           )}
+
         </>
       )}
     </div>

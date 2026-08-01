@@ -225,16 +225,21 @@ const AdminInfoSection = () => {
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    // Build FormData matching the Postman body:
-    // firstName, lastName, email, role (text) + image (file, optional)
     const formData = new FormData();
-    formData.append("firstName", firstName);
-    formData.append("lastName", lastName);
-    formData.append("email", draft.email || "");
-    formData.append("role", draft.role || "");
 
-    if (draft.phone) {
-      formData.append("phone", draft.phone);
+    // Only append fields that have actually changed from their original values to prevent
+    // validation errors on unmodified existing invalid fields (such as phone numbers).
+    if (draft.name !== profileFromAPI.name) {
+      formData.append("firstName", firstName);
+      formData.append("lastName", lastName);
+    }
+
+    if (draft.email !== profileFromAPI.email) {
+      formData.append("email", draft.email || "");
+    }
+
+    if (draft.phone !== profileFromAPI.phone) {
+      formData.append("phone", draft.phone || "");
     }
 
     // Only attach the image when the user actually picked a new file
@@ -242,6 +247,18 @@ const AdminInfoSection = () => {
       formData.append("image", imageFile);
     }
 
+    // Check if there are any changes to submit
+    let hasChanges = false;
+    for (const key of formData.keys()) {
+      hasChanges = true;
+      break;
+    }
+
+    if (!hasChanges) {
+      toast.error("No changes detected to update.");
+      setIsEditing(false);
+      return;
+    }
 
     updateMutation.mutate(formData);
   };
