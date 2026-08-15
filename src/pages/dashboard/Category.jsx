@@ -1,85 +1,18 @@
-import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, MoreVertical, Pencil, Trash2, X, LayoutGrid, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, LayoutGrid, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown, ImageIcon } from "lucide-react";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import CategoryStatCards from "../../components/category/CategoryStatCards";
 import CreateCategoryModal from "../../components/category/CreateCategoryModal";
 import EditCategoryModal from "../../components/category/EditCategoryModal";
+import ActionCell from "../../components/global/ActionCell";
 import useAxiosSecure from "../../hooks/useAxios";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
-// ── ActionCell — same popover pattern as Game/Food pages ────────────────────────
-// Note: categories have no View, so we expose Edit + Delete in the popover.
-const ActionCell = ({ onEdit, onDelete }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  return (
-    <td className="py-4 text-right whitespace-nowrap">
-      <div ref={ref} className="relative inline-block">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
-        >
-          <MoreVertical size={16} />
-        </button>
-
-        {open && (
-          <div
-            className="absolute right-0 top-9 z-50 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2"
-            style={{ animation: "popIn 0.15s ease-out" }}
-          >
-            {/* Edit */}
-            <button
-              onClick={() => { setOpen(false); onEdit(); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black text-black hover:bg-black hover:text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Pencil size={11} />
-              Edit
-            </button>
-
-            {/* Delete */}
-            <button
-              onClick={() => { setOpen(false); onDelete(); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Trash2 size={11} />
-              Delete
-            </button>
-
-            {/* Close */}
-            <button
-              onClick={() => setOpen(false)}
-              className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all cursor-pointer ml-0.5"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(0.9) translateY(-4px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </td>
-  );
-};
-
 const Category = () => {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeRow, setActiveRow] = useState(null);
@@ -105,7 +38,7 @@ const Category = () => {
 
   // TanStack Query — resolves the nested API shape inside queryFn
   // Backend returns: { data: { meta: { page, limit, total }, data: [...] }, success: true }
-  const { data: rawCategories = [], isLoading, isError, refetch } = useQuery({
+  const { data: rawCategories = [], isLoading, isError } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await axiosSecure.get("/api/category/getCategories?limit=1000");
@@ -124,27 +57,29 @@ const Category = () => {
   const resetPage = () => setCurrentPage(1);
 
   // Apply filters and sorting on the frontend
-  let processedCategories = categories.filter((cat) => {
-    const matchesSearch = cat.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "ALL" || cat.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  const processedCategories = useMemo(() => {
+    const filtered = categories.filter((cat) => {
+      const matchesSearch = cat.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === "ALL" || cat.type === filterType;
+      return matchesSearch && matchesType;
+    });
 
-  processedCategories = [...processedCategories].sort((a, b) => {
-    let valA = a[sortBy] || "";
-    let valB = b[sortBy] || "";
+    return [...filtered].sort((a, b) => {
+      let valA = a[sortBy] || "";
+      let valB = b[sortBy] || "";
 
-    if (sortBy === "type") {
-      valA = a.type === "GAME" ? "Games" : "Food";
-      valB = b.type === "GAME" ? "Games" : "Food";
-    }
+      if (sortBy === "type") {
+        valA = a.type === "GAME" ? "Games" : "Food";
+        valB = b.type === "GAME" ? "Games" : "Food";
+      }
 
-    if (sortOrder === "asc") {
-      return valA.localeCompare(valB);
-    } else {
-      return valB.localeCompare(valA);
-    }
-  });
+      if (sortOrder === "asc") {
+        return valA.localeCompare(valB);
+      } else {
+        return valB.localeCompare(valA);
+      }
+    });
+  }, [categories, searchTerm, filterType, sortBy, sortOrder]);
 
   // Frontend Pagination
   const itemsPerPage = 10;
@@ -157,20 +92,24 @@ const Category = () => {
 
   const handleCreateCategory = async (newCategory) => {
     // Map form values to API-expected uppercase type codes
-    const payload = {
-      name: newCategory.name.trim(),
-      type: newCategory.type === "Games" ? "GAME" : "FOOD",
-    };
+    const payload = new FormData();
+    payload.append("name", newCategory.name.trim());
+    payload.append("type", newCategory.type === "Games" ? "GAME" : "FOOD");
+    if (newCategory.file) {
+      payload.append("file", newCategory.file);
+    }
     try {
-      await axiosSecure.post("/api/category/addCategory", payload);
+      const res = await axiosSecure.post("/api/category/addCategory", payload);
+      const created = res.data?.data || res.data;
+      if (created) {
+        queryClient.setQueryData(["categories"], (old = []) => {
+          return [created, ...old];
+        });
+      }
       toast.success("Category created successfully!");
       setIsModalOpen(false);
-      refetch();
     } catch (err) {
       console.error("Create Category Error:", err.message);
-      console.error("Status:", err.response?.status);
-      console.error("Error Response Data:", JSON.stringify(err.response?.data, null, 2));
-      console.error("Payload sent was:", JSON.stringify(payload));
       const message =
         err.response?.data?.message || "Failed to create category.";
       toast.error(message);
@@ -179,12 +118,32 @@ const Category = () => {
   };
 
   const handleEditCategory = async (updatedCategory) => {
-    const payload = {
-      name: updatedCategory.name,
-      type: updatedCategory.type,
-    };
-    await axiosSecure.patch(`/api/category/updateCategory/${updatedCategory.id}`, payload);
-    refetch();
+    try {
+      let payload;
+      if (updatedCategory.file) {
+        payload = new FormData();
+        payload.append("name", updatedCategory.name);
+        payload.append("type", updatedCategory.type);
+        payload.append("file", updatedCategory.file);
+      } else {
+        payload = {
+          name: updatedCategory.name,
+          type: updatedCategory.type,
+        };
+      }
+      const res = await axiosSecure.patch(`/api/category/updateCategory/${updatedCategory.id}`, payload);
+      const updated = res.data?.data || res.data;
+      if (updated) {
+        queryClient.setQueryData(["categories"], (old = []) => {
+          return old.map((cat) =>
+            cat._id === updatedCategory.id || cat.id === updatedCategory.id ? { ...cat, ...updated } : cat
+          );
+        });
+      }
+    } catch (err) {
+      console.error("Edit Category Error:", err.message);
+      throw err;
+    }
   };
 
   const handleDeleteCategory = (cat) => {
@@ -201,10 +160,13 @@ const Category = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          const catId = cat._id || cat.id;
           const payload = { name: cat.name, type: cat.type, isDelete: true };
-          await axiosSecure.patch(`/api/category/updateCategory/${cat._id || cat.id}`, payload);
+          await axiosSecure.patch(`/api/category/updateCategory/${catId}`, payload);
+          queryClient.setQueryData(["categories"], (old = []) => {
+            return old.filter((item) => item._id !== catId && item.id !== catId);
+          });
           Swal.fire("Deleted!", "Category has been deleted.", "success");
-          refetch();
         } catch (err) {
           const errMsg = err.response?.data?.message || err.message || "Failed to delete category.";
           Swal.fire("Error", errMsg, "error");
@@ -331,7 +293,21 @@ const Category = () => {
                       return (
                         <tr key={rowId} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-4 text-sm font-semibold text-gray-900">
-                            {cat.name}
+                            <div className="flex items-center gap-3">
+                              {cat.image ? (
+                                <img
+                                  src={cat.image}
+                                  alt={cat.name}
+                                  className="w-10 h-10 object-cover rounded-lg border border-gray-100 shrink-0"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
+                                  <ImageIcon size={16} />
+                                </div>
+                              )}
+                              <span>{cat.name}</span>
+                            </div>
                           </td>
                           <td className="py-4 text-sm text-gray-600">
                             {displayType}

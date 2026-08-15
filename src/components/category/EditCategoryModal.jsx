@@ -1,9 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { X, Upload } from "lucide-react";
 import Swal from "sweetalert2";
 
 const EditCategoryModal = ({ category, onClose, onSave }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(category?.image || null);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Revoke blob URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const {
     register,
@@ -15,6 +29,51 @@ const EditCategoryModal = ({ category, onClose, onSave }) => {
       type: category?.type === "GAME" ? "Games" : "Food",
     },
   });
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation();
+    setImageFile(null);
+    if (imagePreview && imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setImageFile(file);
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const onSubmit = async (data) => {
     // Show SweetAlert confirmation dialog
@@ -35,6 +94,7 @@ const EditCategoryModal = ({ category, onClose, onSave }) => {
             id: category._id || category.id,
             name: data.name.trim(),
             type: data.type === "Games" ? "GAME" : "FOOD",
+            file: imageFile,
           });
           Swal.fire("Saved!", "", "success");
           onClose();
@@ -107,6 +167,57 @@ const EditCategoryModal = ({ category, onClose, onSave }) => {
                 <option value="Food">Food</option>
                 <option value="Games">Games</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Category Image
+              </label>
+
+              <div
+                onClick={() => !isSubmitting && fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all cursor-pointer ${
+                  imagePreview
+                    ? "border-transparent bg-gray-50"
+                    : dragging
+                    ? "border-black bg-gray-50"
+                    : "border-gray-200 hover:border-gray-400 bg-gray-50/50"
+                }`}
+              >
+                {imagePreview ? (
+                  <>
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      disabled={isSubmitting}
+                      className="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-red-500 text-white rounded-full transition-colors cursor-pointer"
+                      title="Remove image"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center p-4">
+                    <Upload size={20} className="text-gray-400 mb-1.5" />
+                    <span className="text-xs font-semibold text-gray-600">
+                      {dragging ? "Drop to upload" : "Click or drag image here"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">Supports JPG, PNG, WEBP</span>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={isSubmitting}
+                className="hidden"
+              />
             </div>
           </div>
 

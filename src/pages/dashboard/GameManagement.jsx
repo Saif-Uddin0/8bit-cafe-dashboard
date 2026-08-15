@@ -1,88 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
-  Search, Gamepad2, ChevronLeft, ChevronRight,
-  MoreVertical, Eye, Pencil, X, ArrowUpDown, ChevronDown,
+  Search, Gamepad2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown,
 } from "lucide-react";
 import GameStatCards from "../../components/game/GameStatCards";
 import AddGameModal from "../../components/game/AddGameModal";
 import ViewGameModal from "../../components/game/ViewGameModal";
 import EditGameModal from "../../components/game/EditGameModal";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
+import ActionCell from "../../components/global/ActionCell";
 import useAxiosSecure from "../../hooks/useAxios";
 import { toast } from "react-hot-toast";
-
-
-const ActionCell = ({ onView, onEdit }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  return (
-    <td className="py-4 text-right whitespace-nowrap">
-      <div ref={ref} className="relative inline-block">
-
-        {/* ⋮ trigger */}
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
-        >
-          <MoreVertical size={16} />
-        </button>
-
-        {/* Popover */}
-        {open && (
-          <div
-            className="absolute right-0 top-9 z-50 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2"
-            style={{ animation: "popIn 0.15s ease-out" }}
-          >
-            {/* View — primary */}
-            <button
-              onClick={() => { setOpen(false); onView(); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Eye size={11} />
-              View
-            </button>
-
-            {/* Edit — secondary */}
-            <button
-              onClick={() => { setOpen(false); onEdit(); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black text-black hover:bg-black hover:text-white text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Pencil size={11} />
-              Edit
-            </button>
-
-            {/* ✕ close */}
-            <button
-              onClick={() => setOpen(false)}
-              className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all cursor-pointer ml-0.5"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(0.9) translateY(-4px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </td>
-  );
-};
 
 
 const GameManagement = () => {
@@ -301,6 +229,13 @@ const GameManagement = () => {
                       const isAvailable = game.status === "AVAILABLE" || game.status === "Available";
                       const statusLabel = isAvailable ? "Available" : "Unavailable";
 
+                      const discountVal = game.disCountParcenTage ?? game.discountParcenTage ?? game.discountPercentage ?? game.disCountParcentage ?? game.discountParcentage ?? 0;
+                      const hasDiscount = (game.isDiscount ?? game.isDisCount) && Number(discountVal) > 0;
+                      const originalPrice30 = game.price30Min;
+                      const discountedPrice30 = hasDiscount ? Math.round(originalPrice30 * (1 - discountVal / 100)) : originalPrice30;
+                      const originalPrice60 = game.price60Min;
+                      const discountedPrice60 = hasDiscount ? Math.round(originalPrice60 * (1 - discountVal / 100)) : originalPrice60;
+
                       return (
                         <tr
                           key={game.id}
@@ -331,12 +266,36 @@ const GameManagement = () => {
 
                           {/* Price 30 min */}
                           <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
-                            {game.price30Min != null ? `৳${game.price30Min}` : <span className="text-gray-300">—</span>}
+                            {hasDiscount ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 line-through">৳{originalPrice30}</span>
+                                <span className="text-sm font-bold text-red-500 flex items-center gap-1">
+                                  ৳{discountedPrice30}
+                                  <span className="text-[10px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-bold shrink-0">
+                                    {discountVal}% OFF
+                                  </span>
+                                </span>
+                              </div>
+                            ) : (
+                              game.price30Min != null ? `৳${game.price30Min}` : <span className="text-gray-300">—</span>
+                            )}
                           </td>
 
                           {/* Price 60 min */}
                           <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
-                            {game.price60Min != null ? `৳${game.price60Min}` : <span className="text-gray-300">—</span>}
+                            {hasDiscount ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 line-through">৳{originalPrice60}</span>
+                                <span className="text-sm font-bold text-red-500 flex items-center gap-1">
+                                  ৳{discountedPrice60}
+                                  <span className="text-[10px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-bold shrink-0">
+                                    {discountVal}% OFF
+                                  </span>
+                                </span>
+                              </div>
+                            ) : (
+                              game.price60Min != null ? `৳${game.price60Min}` : <span className="text-gray-300">—</span>
+                            )}
                           </td>
 
                           {/* Status */}

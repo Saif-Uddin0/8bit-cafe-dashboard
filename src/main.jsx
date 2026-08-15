@@ -7,7 +7,14 @@ import { router } from "./router/Routes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./pages/Provider/AuthProvider";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 10, // data is fresh for 10 seconds
+    },
+  },
+});
 
 const root = document.getElementById("root");
 

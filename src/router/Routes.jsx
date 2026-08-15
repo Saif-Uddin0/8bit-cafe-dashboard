@@ -1,31 +1,47 @@
+import React, { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import Root from "../layout/Root";
 import ErrorPage from "../components/global/ErrorPage";
-import Home from "../pages/dashboard/Home";
-import Leads from "../pages/dashboard/Leads";
-import Category from "../pages/dashboard/Category";
-import GameManagement from "../pages/dashboard/GameManagement";
-import FoodManagement from "../pages/dashboard/FoodManagement";
-import Schedule from "../pages/dashboard/Schedule";
-import Booking from "../pages/dashboard/Booking";
-import SubAdmin from "../pages/dashboard/SubAdmin";
-import Settings from "../pages/dashboard/Settings";
 import Auth from "../layout/Auth";
-import Login from "../pages/authentications/Login";
-import ForgetPassword from "../pages/authentications/ForgetPassword";
-import Otp from "../pages/authentications/Otp";
-import SetPassword from "../pages/authentications/SetPassword";
+
+// Lazy-loaded pages
+const Home = lazy(() => import("../pages/dashboard/Home"));
+const Leads = lazy(() => import("../pages/dashboard/Leads"));
+const Category = lazy(() => import("../pages/dashboard/Category"));
+const GameManagement = lazy(() => import("../pages/dashboard/GameManagement"));
+const FoodManagement = lazy(() => import("../pages/dashboard/FoodManagement"));
+const Schedule = lazy(() => import("../pages/dashboard/Schedule"));
+const Booking = lazy(() => import("../pages/dashboard/Booking"));
+const SubAdmin = lazy(() => import("../pages/dashboard/SubAdmin"));
+const Settings = lazy(() => import("../pages/dashboard/Settings"));
+
+const Login = lazy(() => import("../pages/authentications/Login"));
+const ForgetPassword = lazy(() => import("../pages/authentications/ForgetPassword"));
+const Otp = lazy(() => import("../pages/authentications/Otp"));
+const SetPassword = lazy(() => import("../pages/authentications/SetPassword"));
+
+// Reusable Suspense wrapper
+const withSuspense = (Component) => (
+  <Suspense
+    fallback={
+      <div className="flex flex-col items-center justify-center min-h-[400px] py-16 space-y-4">
+        <div className="w-12 h-12 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }
+  >
+    <Component />
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <Root></Root>,
-        errorElement: <ErrorPage></ErrorPage>,
+        element: <Root />,
+        errorElement: <ErrorPage />,
         children: [
-
             {
                 index: true,
-                element: <Home></Home>
+                element: withSuspense(Home)
             },
             {
                 path: "game-management",
@@ -59,13 +75,12 @@ export const router = createBrowserRouter([
                 path: "setting",
                 element: <Settings></Settings>
             },
-
         ]
     },
     //  authentication routes
     {
         path: "auth",
-        element: <Auth></Auth>,
+        element: <Auth />,
         children: [
           { path: "login", element: <Login></Login> },
           { path: "forget-password", element: <ForgetPassword></ForgetPassword> },
