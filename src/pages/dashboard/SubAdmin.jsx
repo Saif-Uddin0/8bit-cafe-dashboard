@@ -1,31 +1,33 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { Plus } from "lucide-react";
+import { toast } from "react-hot-toast";
 import SubAdminTable from "../../components/subadmin/SubAdminTable";
 import AddSubAdminModal from "../../components/subadmin/AddSubAdminModal";
+import useAxiosSecure from "../../hooks/useAxios";
 
 const SubAdmin = () => {
+  const axiosSecure = useAxiosSecure();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: admins = [], refetch, isLoading, isError, error } = useQuery({
-    queryKey: ["admins"],
+  // ── Fetch all sub-admins ──
+  const { data: admins = [], isLoading, isError, error } = useQuery({
+    queryKey: ["subAdmins"],
     queryFn: async () => {
-      const res = await axios.get("/sub-admins.json");
-      return res.data;
+      const res = await axiosSecure.get("/api/user/allUsers?role=SUB_ADMIN");
+      // Backend may wrap: { data: { data: [...] } } or { data: [...] }
+      const body = res.data?.data;
+      if (Array.isArray(body?.data)) return body.data;
+      if (Array.isArray(body))       return body;
+      if (Array.isArray(res.data))   return res.data;
+      return [];
     },
   });
 
-  const handleAddSubAdmin = (formData) => {
-    console.log("New Sub-Admin:", formData);
-    // TODO: await axiosSecure.post("/auth/users/", formData); then refetch()
-    refetch();
-  };
-
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto p-2 md:p-5 mt-2 pb-8 border border-gray-200 rounded-xl shadow-xs">
+    <div className="space-y-6 max-w-[1600px] mx-auto px-2 md:px-4 pb-8">
 
-      {/* Add Sub-Admin button — right-aligned, title is shown in the Navbar */}
+      {/* Add Sub-Admin button — right-aligned */}
       <div className="flex justify-end">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -40,11 +42,11 @@ const SubAdmin = () => {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <div className="w-10 h-10 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm">Loading admins...</p>
+          <p className="text-gray-400 text-sm">Loading sub-admins...</p>
         </div>
       ) : isError ? (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm">
-          Failed to load: {error?.message}
+          {error?.response?.data?.message || error?.message || "Failed to load sub-admins."}
         </div>
       ) : (
         <SubAdminTable admins={admins} />
@@ -53,7 +55,6 @@ const SubAdmin = () => {
       <AddSubAdminModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddSubAdmin}
       />
     </div>
   );

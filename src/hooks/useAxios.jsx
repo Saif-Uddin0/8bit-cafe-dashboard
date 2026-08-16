@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 // Create the axios instance with the backend base URL
 const axiosSecure = axios.create({
@@ -19,7 +20,6 @@ axiosSecure.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor — logs the backend error body so we can debug 500s
 axiosSecure.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -31,6 +31,14 @@ axiosSecure.interceptors.response.use(
       "|",
       JSON.stringify(error.response?.data)
     );
+
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      const msg =
+        error.response?.data?.message || "Unauthorized access";
+      toast.error(msg);
+    }
+
     return Promise.reject(error);
   }
 );

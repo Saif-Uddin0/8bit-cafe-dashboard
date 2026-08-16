@@ -313,12 +313,8 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
         {/* ── Fixed Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#532C89]/10 flex items-center justify-center">
-              <Gamepad2 size={16} className="text-[#532C89]" />
-            </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 leading-none">Add New Game</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Fill in the details below</p>
+              <h2 className="text-xl font-bold text-gray-900 leading-none">Add New Game</h2>
             </div>
           </div>
 
@@ -636,7 +632,7 @@ const AddGameModal = ({ onClose, onCreate, categories = [] }) => {
             type="submit"
             form="add-game-form"
             disabled={submitting}
-            className="px-6 py-2.5 bg-[#532C89] hover:bg-[#6C04D7] text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
+            className="px-6 py-2.5 bg-[#000000] hover:bg-[#1E2939] text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
           >
             {submitting ? (
               <>

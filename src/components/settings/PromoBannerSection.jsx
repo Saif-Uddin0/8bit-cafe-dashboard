@@ -81,10 +81,10 @@ const PromoBannerSection = () => {
   });
 
   // After every successful mutation we invalidate both draft and published caches
-  const refreshBanners = () => {
-    queryClient.invalidateQueries({ queryKey: ["banners", "draft"] });
-    queryClient.invalidateQueries({ queryKey: ["banners", "published"] });
-  };
+  // const refreshBanners = () => {
+  //   queryClient.invalidateQueries({ queryKey: ["banners", "draft"] });
+  //   queryClient.invalidateQueries({ queryKey: ["banners", "published"] });
+  // };
 
   // ── Upload: POST /api/banners ─────────────────────────────────────────────
   const handleUpload = async (file) => {
@@ -95,8 +95,17 @@ const PromoBannerSection = () => {
     formData.append("file", file);
 
     try {
-      await axiosSecure.post("/api/banners", formData);
-      await refreshBanners();
+      const res = await axiosSecure.post("/api/banners", formData);
+
+      const newBanner = res.data?.data;
+
+      if (newBanner) {
+        queryClient.setQueryData(["banners", "draft"], (old = []) => [
+          ...old,
+          newBanner,
+        ]);
+      }
+
       toast.success("Banner uploaded successfully!");
     } catch (err) {
       console.error("Banner upload error:", err);
@@ -108,21 +117,58 @@ const PromoBannerSection = () => {
 
   // ── Publish: PATCH /api/banners/:id?isPublish=true ────────────────────────
   const handlePublish = async (bannerId, e) => {
-    e.stopPropagation();
-    setLoadingBanners((prev) => ({ ...prev, [bannerId]: true }));
+  e.stopPropagation();
 
-    try {
-      await axiosSecure.patch(`/api/banners/${bannerId}?isPublish=true`);
-      await refreshBanners();
-      toast.success("Banner published successfully!");
-    } catch (err) {
-      console.error("Banner publish error:", err);
-      toast.error(err.response?.data?.message || "Failed to publish banner.");
-    } finally {
-      setLoadingBanners((prev) => ({ ...prev, [bannerId]: false }));
+  setLoadingBanners((prev) => ({
+    ...prev,
+    [bannerId]: true,
+  }));
+
+  try {
+    const res = await axiosSecure.patch(
+      `/api/banners/${bannerId}?isPublish=true`,
+      {
+        isPublish: "true",
+      }
+    );
+
+    const updatedBanner = res.data?.data;
+
+    // Remove from draft immediately
+    queryClient.setQueryData(["banners", "draft"], (old = []) =>
+      old.filter(
+        (banner) => (banner?.id || banner?._id) !== bannerId
+      )
+    );
+
+    if (updatedBanner) {
+      // Backend returned updated banner → update cache directly
+      queryClient.setQueryData(
+        ["banners", "published"],
+        (old = []) => [...old, updatedBanner]
+      );
+    } else {
+      // Backend didn't return banner data → fetch published list
+      await queryClient.invalidateQueries({
+        queryKey: ["banners", "published"],
+      });
     }
-  };
 
+    toast.success("Banner published successfully!");
+  } catch (err) {
+    console.error("Banner publish error:", err);
+
+    toast.error(
+      err.response?.data?.message ||
+        "Failed to publish banner."
+    );
+  } finally {
+    setLoadingBanners((prev) => ({
+      ...prev,
+      [bannerId]: false,
+    }));
+  }
+};
   // ── Delete: DELETE /api/banners/:id ──────────────────────────────────────
   const handleDelete = (bannerId, e) => {
     e.stopPropagation();
@@ -142,7 +188,14 @@ const PromoBannerSection = () => {
       setLoadingBanners((prev) => ({ ...prev, [bannerId]: true }));
       try {
         await axiosSecure.delete(`/api/banners/${bannerId}`);
-        await refreshBanners();
+
+        queryClient.setQueryData(["banners", "draft"], (old = []) =>
+          old.filter((banner) => (banner?.id || banner?._id) !== bannerId)
+        );
+
+        queryClient.setQueryData(["banners", "published"], (old = []) =>
+          old.filter((banner) => (banner?.id || banner?._id) !== bannerId)
+        );
         Swal.fire("Deleted!", "Banner has been deleted.", "success");
       } catch (err) {
         console.error("Banner deletion error:", err);
@@ -238,6 +291,7 @@ const PromoBannerSection = () => {
                             alt="Published Banner"
                             className="w-full h-full object-cover"
                             decoding="async"
+                            loading="lazy"
                           />
 
                           {/* Hover action overlay only when editing */}
@@ -378,7 +432,7 @@ const PromoBannerSection = () => {
       <input
         ref={uploadInputRef}
         type="file"
-        accept="image/*"
+        accept=".jpg,.jpeg,.png,.webp"
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) {
