@@ -52,12 +52,8 @@ const ViewFoodModal = ({ food, onClose, onEdit }) => {
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#532C89]/10 flex items-center justify-center">
-              <Utensils size={16} className="text-[#532C89]" />
-            </div>
             <div>
               <h2 className="text-base font-bold text-gray-900 leading-none">Food Details</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Read-only view</p>
             </div>
           </div>
           <button
@@ -200,7 +196,7 @@ const ViewFoodModal = ({ food, onClose, onEdit }) => {
           </button>
           <button
             onClick={() => { onClose(); onEdit(food); }}
-            className="px-6 py-2.5 bg-[#532C89] hover:bg-[#6C04D7] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
+            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
           >
             <Pencil size={14} />
             Edit Food

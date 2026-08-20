@@ -26,11 +26,11 @@ const normalizeTime = (timeStr) => {
   const cleaned = timeStr.replace(/\s+/g, "").toUpperCase();
   const match = cleaned.match(/^(\d{1,2}):?(\d{2})(AM|PM)?$/) || cleaned.match(/^(\d{1,2})(AM|PM)$/);
   if (!match) return timeStr.trim();
-  
+
   const hours = match[1];
   const minutes = match[2] || "00";
   const ampm = match[3] || "";
-  
+
   if (ampm) {
     return `${hours}:${minutes} ${ampm}`;
   }
@@ -42,14 +42,14 @@ const to24Hour = (time12h) => {
   const cleaned = time12h.replace(/\s+/g, "").toUpperCase();
   const match = cleaned.match(/^(\d{1,2}):(\d{2})(AM|PM)?$/);
   if (!match) return "09:00";
-  
+
   let hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
   const ampm = match[3];
-  
+
   if (ampm === "PM" && hours < 12) hours += 12;
   if (ampm === "AM" && hours === 12) hours = 0;
-  
+
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 };
 
@@ -58,11 +58,11 @@ const to12Hour = (time24h) => {
   const parts = time24h.split(":");
   let hours = parseInt(parts[0], 10);
   const minutes = parseInt(parts[1], 10);
-  
+
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12;
   if (hours === 0) hours = 12;
-  
+
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
 };
 
@@ -79,7 +79,7 @@ const TimePicker = ({ label, value, onChange, disabled }) => {
     const cleaned = value.replace(/\s+/g, "").toUpperCase();
     const match = cleaned.match(/^(\d{1,2}):?(\d{2})(AM|PM)?$/) || cleaned.match(/^(\d{1,2})(AM|PM)$/);
     if (!match) return { hour: "09", minute: "00", ampm: "AM" };
-    
+
     let hr = match[1].padStart(2, "0");
     let min = match[2] || "00";
     let ap = match[3] || "AM";
@@ -108,9 +108,9 @@ const TimePicker = ({ label, value, onChange, disabled }) => {
           >
             {hoursList.map((h) => <option key={h} value={h}>{h}</option>)}
           </select>
-          
+
           <span className="text-xs text-gray-400 font-bold select-none">:</span>
-          
+
           <select
             value={parsed.minute}
             disabled={disabled}
@@ -127,11 +127,10 @@ const TimePicker = ({ label, value, onChange, disabled }) => {
             type="button"
             disabled={disabled}
             onClick={() => updateField("ampm", "AM")}
-            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-              parsed.ampm === "AM"
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${parsed.ampm === "AM"
                 ? "bg-white text-[#532C89] shadow-sm"
                 : "text-gray-400 hover:text-gray-700"
-            }`}
+              }`}
           >
             AM
           </button>
@@ -139,11 +138,10 @@ const TimePicker = ({ label, value, onChange, disabled }) => {
             type="button"
             disabled={disabled}
             onClick={() => updateField("ampm", "PM")}
-            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-              parsed.ampm === "PM"
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${parsed.ampm === "PM"
                 ? "bg-white text-[#532C89] shadow-sm"
                 : "text-gray-400 hover:text-gray-700"
-            }`}
+              }`}
           >
             PM
           </button>
@@ -162,16 +160,16 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
   const [categoryId, setCategoryId] = useState(game?.categoryId ?? game?.category?.id ?? "");
 
   // ── Multi-image state (mirrors EditFoodModal pattern) ─────────────────────
-  const addFileInputRef     = useRef(null);
+  const addFileInputRef = useRef(null);
   const replaceFileInputRef = useRef(null);
   const [replacingId, setReplacingId] = useState(null);
   const [imagesList, setImagesList] = useState(() =>
     (game?.images || []).map((img, i) => ({
-      id:       `orig-${i}`,
-      type:     "existing",
-      url:      typeof img === "object" ? img?.url : img,
+      id: `orig-${i}`,
+      type: "existing",
+      url: typeof img === "object" ? img?.url : img,
       publicId: typeof img === "object" ? img?.publicId : null,
-      deleted:  false,
+      deleted: false,
     }))
   );
   const [deletedPublicIds, setDeletedPublicIds] = useState([]);
@@ -190,8 +188,8 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
     const valid = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!valid.length) return;
     const items = valid.map((file, idx) => ({
-      id:      `new-${Date.now()}-${idx}`,
-      type:    "new",
+      id: `new-${Date.now()}-${idx}`,
+      type: "new",
       file,
       preview: URL.createObjectURL(file),
       deleted: false,
@@ -223,8 +221,8 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
     const file = e.target.files?.[0];
     if (!file || !replacingId) return;
     const newItem = {
-      id:      `new-${Date.now()}`,
-      type:    "new",
+      id: `new-${Date.now()}`,
+      type: "new",
       file,
       preview: URL.createObjectURL(file),
       deleted: false,
@@ -368,10 +366,10 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
 
   const validate = () => {
     const errs = {};
-    if (!name.trim())         errs.name        = "Game name is required";
-    if (!categoryId)          errs.categoryId  = "Category is required";
-    if (!description.trim())  errs.description = "Description is required";
-    if (!slot30 && !slot60)   errs.slots       = "Select at least one time slot";
+    if (!name.trim()) errs.name = "Game name is required";
+    if (!categoryId) errs.categoryId = "Category is required";
+    if (!description.trim()) errs.description = "Description is required";
+    if (!slot30 && !slot60) errs.slots = "Select at least one time slot";
     if (slot30 && !price30Min) errs.price30Min = "Price for 30 min is required";
     if (slot60 && !price60Min) errs.price60Min = "Price for 60 min is required";
     return errs;
@@ -435,12 +433,8 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
         {/* ── Fixed Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#532C89]/10 flex items-center justify-center">
-              <Gamepad2 size={16} className="text-[#532C89]" />
-            </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 leading-none">Edit Game</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Update game details below</p>
+              <h2 className="text-xl font-bold text-gray-900 leading-none">Update game details below</h2>
             </div>
           </div>
           <button
@@ -665,8 +659,8 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: "AVAILABLE",   label: "Available",   color: "text-green-600 bg-green-50 border-green-200" },
-                  { value: "UNAVAILABLE", label: "Unavailable", color: "text-red-600   bg-red-50   border-red-200"   },
+                  { value: "AVAILABLE", label: "Available", color: "text-green-600 bg-green-50 border-green-200" },
+                  { value: "UNAVAILABLE", label: "Unavailable", color: "text-red-600   bg-red-50   border-red-200" },
                 ].map((s) => {
                   const active = status === s.value;
                   return (
@@ -674,11 +668,10 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                       key={s.value}
                       type="button"
                       onClick={() => setStatus(s.value)}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
-                        active
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${active
                           ? `${s.color} ring-2 ring-offset-1 ring-current`
                           : "border-gray-200 text-gray-500 hover:border-gray-300 bg-white"
-                      }`}
+                        }`}
                     >
                       <span>{s.label}</span>
                       {active && <CheckCircle size={15} className="shrink-0" />}
@@ -695,7 +688,7 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                   <Clock size={14} className="text-[#532C89]" />
                   <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">Operating Hours</span>
                 </div>
-                
+
                 {/* Segmented Control */}
                 <div className="flex p-0.5 bg-gray-100 rounded-lg shrink-0 border border-gray-200/50">
                   <button
@@ -710,22 +703,20 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                         return next;
                       });
                     }}
-                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                      scheduleMode === "SAME"
+                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${scheduleMode === "SAME"
                         ? "bg-white text-[#532C89] shadow-sm"
                         : "text-gray-500 hover:text-gray-800"
-                    }`}
+                      }`}
                   >
                     Same Hours
                   </button>
                   <button
                     type="button"
                     onClick={() => setScheduleMode("CUSTOM")}
-                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                      scheduleMode === "CUSTOM"
+                    className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${scheduleMode === "CUSTOM"
                         ? "bg-white text-[#532C89] shadow-sm"
                         : "text-gray-500 hover:text-gray-800"
-                    }`}
+                      }`}
                   >
                     Custom Hours
                   </button>
@@ -760,11 +751,10 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                             key={day}
                             type="button"
                             onClick={() => toggleDay(day)}
-                            className={`flex-1 min-w-[50px] py-2 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                              isActive
+                            className={`flex-1 min-w-[50px] py-2 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${isActive
                                 ? "bg-[#532C89] text-white border-[#532C89] shadow-sm"
                                 : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700"
-                            }`}
+                              }`}
                           >
                             {day.charAt(0) + day.slice(1, 3).toLowerCase()}
                           </button>
@@ -778,23 +768,20 @@ const EditGameModal = ({ game, onClose, onUpdate, categories = [] }) => {
                   {WEEKDAYS.map((day) => (
                     <div
                       key={day}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${
-                        enabledDays[day] ? "border-[#532C89]/25 bg-[#532C89]/5" : "border-gray-100 bg-gray-50/60 opacity-60"
-                      }`}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${enabledDays[day] ? "border-[#532C89]/25 bg-[#532C89]/5" : "border-gray-100 bg-gray-50/60 opacity-60"
+                        }`}
                     >
                       {/* Day toggle with Switch style */}
                       <div className="flex items-center gap-3 shrink-0 sm:w-32">
                         <button
                           type="button"
                           onClick={() => toggleDay(day)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            enabledDays[day] ? "bg-[#532C89]" : "bg-gray-200"
-                          }`}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enabledDays[day] ? "bg-[#532C89]" : "bg-gray-200"
+                            }`}
                         >
                           <span
-                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              enabledDays[day] ? "translate-x-4" : "translate-x-0"
-                            }`}
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${enabledDays[day] ? "translate-x-4" : "translate-x-0"
+                              }`}
                           />
                         </button>
                         <span className={`text-xs font-bold capitalize ${enabledDays[day] ? "text-[#532C89]" : "text-gray-400"}`}>

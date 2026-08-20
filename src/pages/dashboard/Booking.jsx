@@ -1,12 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import useAxiosSecure from '../../hooks/useAxios';
 import BookingStatCards from '../../components/booking/BookingStatCards';
 import BookingTable from '../../components/booking/BookingTable';
 
-// API Fetcher function for Bookings data
+// Main Booking Page component connecting stats and tables to real backend API
 const Booking = () => {
-    // TanStack Query to handle fetching, caching, and loading states
+    const axiosSecure = useAxiosSecure();
+
+    // TanStack Query to handle fetching all bookings from backend
     const {
         data: bookings = [],
         refetch,
@@ -16,8 +18,9 @@ const Booking = () => {
     } = useQuery({
         queryKey: ["bookings"],
         queryFn: async () => {
-            const res = await axios.get("/bookings.json");
-            return res.data;
+            const res = await axiosSecure.get("/api/booking/all-bookings?limit=10000");
+            // API schema structure returns the array in data.data.data
+            return res.data?.data?.data || [];
         }
     });
 

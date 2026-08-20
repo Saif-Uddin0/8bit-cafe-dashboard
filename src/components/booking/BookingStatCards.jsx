@@ -1,50 +1,59 @@
 import React, { useMemo } from "react";
 
-// Helper to parse DD-MM-YYYY to a comparable Date object
-const parseDate = (dateStr) => {
-  if (!dateStr) return new Date();
-  const [day, month, year] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
+// Helper to check if a UTC timestamp is today in client's timezone
+const isToday = (utcString) => {
+  if (!utcString) return false;
+  const bookingDate = new Date(utcString);
+  const today = new Date();
+  return (
+    bookingDate.getDate() === today.getDate() &&
+    bookingDate.getMonth() === today.getMonth() &&
+    bookingDate.getFullYear() === today.getFullYear()
+  );
 };
 
-// Helper to get today's date formatted as DD-MM-YYYY
-const getTodayString = () => {
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2, "0");
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const yyyy = today.getFullYear();
-  return `${dd}-${mm}-${yyyy}`;
+// Helper to check if a UTC timestamp is in the future in client's timezone
+const isUpcoming = (utcString) => {
+  if (!utcString) return false;
+  const bookingDate = new Date(utcString);
+  const now = new Date();
+  return bookingDate > now;
+};
+
+// Helper to check if a booking is completed
+const isCompleted = (booking) => {
+  if (!booking?.startTime) return false;
+  if (booking.gameStatus === "ENDED") return true;
+
+  const bookingDate = new Date(booking.startTime);
+  const now = new Date();
+  // If the booking date/time is in the past and it is PAID
+  return bookingDate < now && booking.status === "PAID";
 };
 
 const BookingStatCards = ({ bookings = [] }) => {
   const stats = useMemo(() => {
-    const todayStr = getTodayString();
-    const todayDate = parseDate(todayStr);
-
     let todayCount = 0;
     let upcomingCount = 0;
     let completedCount = 0;
 
     bookings.forEach((booking) => {
-      if (booking.status === "Cancelled") return;
+      // Exclude cancelled and expired bookings from calculations
+      const statusUpper = booking.status?.toUpperCase();
+      if (statusUpper === "CANCELLED" || statusUpper === "EXPIRED") return;
 
-      const bookingDate = parseDate(booking.date);
-      
       // 1. Today's Bookings
-      if (booking.date === todayStr) {
+      if (isToday(booking.startTime)) {
         todayCount++;
       }
 
-      // 2. Upcoming Bookings (future dates)
-      if (bookingDate > todayDate) {
+      // 2. Upcoming Bookings
+      if (isUpcoming(booking.startTime)) {
         upcomingCount++;
       }
 
-      // 3. Completed Bookings (explicitly "Completed" status OR past dates that are Paid/Completed)
-      if (
-        booking.status === "Completed" || 
-        (bookingDate < todayDate && (booking.status === "Paid" || booking.status === "Completed"))
-      ) {
+      // 3. Completed Bookings
+      if (isCompleted(booking)) {
         completedCount++;
       }
     });

@@ -290,14 +290,10 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#532C89]/10 flex items-center justify-center">
-              <Utensils size={16} className="text-[#532C89]" />
-            </div>
             <div>
               <h2 className="text-base font-bold text-gray-900 leading-none truncate max-w-[260px]">
-                Edit — {food?.name}
+                Update food details of {food?.name}
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">Update food details</p>
             </div>
           </div>
           <button
