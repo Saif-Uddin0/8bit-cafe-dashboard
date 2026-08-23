@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, MoreVertical, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Search, MoreVertical, ChevronDown } from "lucide-react";
 import TableScrollWrapper from "../global/TableScrollWrapper";
+import Pagination from "../global/Pagination";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -190,39 +191,11 @@ const LeadsTable = ({ leads = [] }) => {
         </table>
       </TableScrollWrapper>
 
-      {totalPages > 1 && (
-        <div className="flex justify-end items-center gap-1.5 mt-5">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={activePage === 1}
-            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {Array.from({ length: totalPages }).map((_, idx) => (
-            <button
-              key={idx + 1}
-              onClick={() => setCurrentPage(idx + 1)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                activePage === idx + 1
-                  ? "bg-[#306BAC] text-white"
-                  : "text-gray-500 hover:bg-gray-50 border border-transparent"
-              }`}
-            >
-              {idx + 1}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={activePage === totalPages}
-            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={activePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

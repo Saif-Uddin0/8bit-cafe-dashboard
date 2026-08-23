@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, LayoutGrid, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown, ImageIcon } from "lucide-react";
+import { Search, LayoutGrid, ArrowUpDown, ChevronDown, ImageIcon } from "lucide-react";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import CategoryStatCards from "../../components/category/CategoryStatCards";
 import CreateCategoryModal from "../../components/category/CreateCategoryModal";
 import EditCategoryModal from "../../components/category/EditCategoryModal";
 import ActionCell from "../../components/global/ActionCell";
 import useAxiosSecure from "../../hooks/useAxios";
+import Pagination from "../../components/global/Pagination";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
@@ -265,6 +266,9 @@ const Category = () => {
               <table ref={tableRef} className="w-full text-left border-collapse px-2">
                 <thead>
                   <tr className="border-b border-gray-100">
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[8%] whitespace-nowrap">
+                      No.
+                    </th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-1/3">
                       Category Name
                     </th>
@@ -281,7 +285,9 @@ const Category = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {paginatedCategories.length > 0 ? (
-                    paginatedCategories.map((cat) => {
+                    paginatedCategories.map((cat, index) => {
+                      const absoluteIndex = (activePage - 1) * itemsPerPage + index + 1;
+                      const formattedIndex = String(absoluteIndex).padStart(2, "0");
                       const displayType =
                         cat.type === "GAME" ? "Games" :
                         cat.type === "FOOD" ? "Food" :
@@ -292,6 +298,7 @@ const Category = () => {
 
                       return (
                         <tr key={rowId} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-4 text-sm text-gray-400 font-medium whitespace-nowrap">{formattedIndex}</td>
                           <td className="py-4 text-sm font-semibold text-gray-900">
                             <div className="flex items-center gap-3">
                               {cat.image ? (
@@ -345,40 +352,11 @@ const Category = () => {
               </table>
             </TableScrollWrapper>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-1.5 mt-5">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={activePage === 1}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-
-                {Array.from({ length: totalPages }).map((_, idx) => (
-                  <button
-                    key={idx + 1}
-                    onClick={() => setCurrentPage(idx + 1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      activePage === idx + 1
-                        ? "bg-black text-white"
-                        : "text-gray-500 hover:bg-gray-50 border border-transparent"
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={activePage === totalPages}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={activePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
 
           {isModalOpen && (

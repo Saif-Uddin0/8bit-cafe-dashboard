@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
-  Search, Utensils, ChevronLeft, ChevronRight, Loader2, ArrowUpDown, ChevronDown,
+  Search, Utensils, Loader2, ArrowUpDown, ChevronDown,
 } from "lucide-react";
 import FoodStatCards from "../../components/food/FoodStatCards";
 import AddFoodModal from "../../components/food/AddFoodModal";
@@ -10,7 +10,10 @@ import EditFoodModal from "../../components/food/EditFoodModal";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import ActionCell from "../../components/global/ActionCell";
 import useAxiosSecure from "../../hooks/useAxios";
+import Pagination from "../../components/global/Pagination";
 import { toast } from "react-hot-toast";
+
+const ITEMS_PER_PAGE = 10;
 
 const FoodManagement = () => {
   const axiosSecure = useAxiosSecure();
@@ -187,6 +190,7 @@ const FoodManagement = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[5%] whitespace-nowrap">No.</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[25%] whitespace-nowrap">Food Name</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[15%] whitespace-nowrap">Category</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[12%] whitespace-nowrap">Price</th>
@@ -198,7 +202,9 @@ const FoodManagement = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {foods.length > 0 ? (
-                    foods.map((food) => {
+                    foods.map((food, index) => {
+                      const absoluteIndex = (activePage - 1) * ITEMS_PER_PAGE + index + 1;
+                      const formattedIndex = String(absoluteIndex).padStart(2, "0");
                       const categoryName =
                         typeof food.category === "object"
                           ? food.category?.name
@@ -216,8 +222,6 @@ const FoodManagement = () => {
                       const originalPrice = food.price;
                       const discountedPrice = hasDiscount ? Math.round(originalPrice * (1 - discountVal / 100)) : originalPrice;
 
-                      const description =
-                        food.short_description || food.description || "—";
                       const foodImage =
                          Array.isArray(food.images) && food.images.length > 0
                            ? (typeof food.images[0] === "object" ? food.images[0]?.url : food.images[0])
@@ -228,6 +232,8 @@ const FoodManagement = () => {
                           key={food.id || food._id}
                           className="group hover:bg-gray-50/50 transition-colors"
                         >
+                          {/* Row Number */}
+                          <td className="py-4 text-sm text-gray-400 font-medium whitespace-nowrap">{formattedIndex}</td>
                           {/* Food Name + Thumbnail */}
                           <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-3">
@@ -320,40 +326,11 @@ const FoodManagement = () => {
               </table>
             </TableScrollWrapper>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-1.5 mt-5">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={activePage === 1}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-
-                {Array.from({ length: totalPages }).map((_, idx) => (
-                  <button
-                    key={idx + 1}
-                    onClick={() => setCurrentPage(idx + 1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      activePage === idx + 1
-                        ? "bg-black text-white"
-                        : "text-gray-500 hover:bg-gray-50 border border-transparent"
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={activePage === totalPages}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={activePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
 
           {/* ── Modals ── */}

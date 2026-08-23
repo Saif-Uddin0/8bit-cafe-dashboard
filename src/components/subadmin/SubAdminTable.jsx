@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Search, MoreVertical, ChevronLeft, ChevronRight, ListFilter, RotateCcw,
+  Search, MoreVertical, ListFilter, RotateCcw,
   Loader2, Eye, X,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import useAxiosSecure from "../../hooks/useAxios";
 import TableScrollWrapper from "../global/TableScrollWrapper";
 import ViewSubAdminModal from "./ViewSubAdminModal";
+import Pagination from "../global/Pagination";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -191,6 +192,7 @@ const SubAdminTable = ({ admins = [] }) => {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-100">
+                <th className="pb-3 pr-6 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap w-[5%]">No.</th>
                 {["Avatar", "Name", "Role", "Email", "Status"].map((h) => (
                   <th key={h} className="pb-3 pr-6 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
                     {h}
@@ -203,13 +205,17 @@ const SubAdminTable = ({ admins = [] }) => {
             </thead>
 
             <tbody className="divide-y divide-gray-100">
-              {pageData.length > 0 ? pageData.map((admin) => {
+              {pageData.length > 0 ? pageData.map((admin, index) => {
+                const absoluteIndex = (curPage - 1) * ITEMS_PER_PAGE + index + 1;
+                const formattedIndex = String(absoluteIndex).padStart(2, "0");
                 const fullName      = `${admin.firstName ?? ""} ${admin.lastName ?? ""}`.trim();
                 const normalStatus  = (admin.status ?? "").toUpperCase();
                 const isUpdating    = isStatusPending && updatingVars?.adminId === admin.id;
 
                 return (
                   <tr key={admin.id} className="hover:bg-gray-50/50 transition-colors">
+                    {/* Row Number */}
+                    <td className="py-4 pr-6 text-sm text-gray-400 font-medium whitespace-nowrap">{formattedIndex}</td>
 
                     {/* Avatar */}
                     <td className="py-4 pr-6 whitespace-nowrap">
@@ -318,38 +324,11 @@ const SubAdminTable = ({ admins = [] }) => {
           </table>
         </TableScrollWrapper>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-end items-center gap-1.5 mt-5">
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={curPage === 1}
-              className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                  curPage === n ? "bg-[#532C89] text-white" : "text-gray-500 hover:bg-gray-50 border border-transparent"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              disabled={curPage === totalPages}
-              className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
+        <Pagination
+          currentPage={curPage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
 
       {/* View Details modal */}

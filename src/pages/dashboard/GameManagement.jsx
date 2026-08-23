@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
-  Search, Gamepad2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronDown,
+  Search, Gamepad2, ArrowUpDown, ChevronDown,
 } from "lucide-react";
 import GameStatCards from "../../components/game/GameStatCards";
 import AddGameModal from "../../components/game/AddGameModal";
@@ -10,8 +10,10 @@ import EditGameModal from "../../components/game/EditGameModal";
 import TableScrollWrapper from "../../components/global/TableScrollWrapper";
 import ActionCell from "../../components/global/ActionCell";
 import useAxiosSecure from "../../hooks/useAxios";
+import Pagination from "../../components/global/Pagination";
 import { toast } from "react-hot-toast";
 
+const ITEMS_PER_PAGE = 10;
 
 const GameManagement = () => {
   const axiosSecure = useAxiosSecure();
@@ -212,6 +214,7 @@ const GameManagement = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
+                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[5%] whitespace-nowrap">No.</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[28%] whitespace-nowrap">Game Name</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[16%] whitespace-nowrap">Category</th>
                     <th className="pb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-[14%] whitespace-nowrap">Price / 30 min</th>
@@ -222,7 +225,9 @@ const GameManagement = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {games.length > 0 ? (
-                    games.map((game) => {
+                    games.map((game, index) => {
+                      const absoluteIndex = (activePage - 1) * ITEMS_PER_PAGE + index + 1;
+                      const formattedIndex = String(absoluteIndex).padStart(2, "0");
                       const gameImage = Array.isArray(game.images) && game.images.length > 0
                         ? (typeof game.images[0] === "object" ? game.images[0]?.url : game.images[0])
                         : null;
@@ -241,6 +246,8 @@ const GameManagement = () => {
                           key={game.id}
                           className="group hover:bg-gray-50/50 transition-colors"
                         >
+                          {/* Row Number */}
+                          <td className="py-4 text-sm text-gray-400 font-medium whitespace-nowrap">{formattedIndex}</td>
                           {/* Game Name + Image */}
                           <td className="py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-3">
@@ -326,40 +333,11 @@ const GameManagement = () => {
               </table>
             </TableScrollWrapper>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-1.5 mt-5">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={activePage === 1}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-
-                {Array.from({ length: totalPages }).map((_, idx) => (
-                  <button
-                    key={idx + 1}
-                    onClick={() => setCurrentPage(idx + 1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      activePage === idx + 1
-                        ? "bg-black text-white"
-                        : "text-gray-500 hover:bg-gray-50 border border-transparent"
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={activePage === totalPages}
-                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={activePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
 
           {/* ── Modals ── */}

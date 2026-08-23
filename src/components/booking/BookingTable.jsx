@@ -1,26 +1,27 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, ChevronLeft, ChevronRight, ListFilter, RotateCcw } from "lucide-react";
+import { Search, ListFilter, RotateCcw } from "lucide-react";
 import TableScrollWrapper from "../global/TableScrollWrapper";
 import ActionCell from "../global/ActionCell";
 import BookingDetailsModal from "./BookingDetailsModal";
+import Pagination from "../global/Pagination";
 
 const ITEMS_PER_PAGE = 10;
 
 // Status badge styles
 const STATUS_STYLES = {
-  PAID:      "bg-green-100 text-green-700",
-  PENDING:   "bg-amber-100 text-amber-700",
+  PAID: "bg-green-100 text-green-700",
+  PENDING: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-blue-100 text-blue-700",
   CANCELLED: "bg-red-100 text-red-700",
-  EXPIRED:   "bg-red-100 text-red-700",
+  EXPIRED: "bg-red-100 text-red-700",
 };
 
 const STATUS_LABELS = {
-  PAID:      "Paid",
-  PENDING:   "Pending",
+  PAID: "Paid",
+  PENDING: "Pending",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
-  EXPIRED:   "Expired",
+  EXPIRED: "Expired",
 };
 
 // Helper to determine active display status
@@ -40,12 +41,12 @@ const formatTime = (date) => {
 };
 
 const BookingTable = ({ bookings = [] }) => {
-  const [search, setSearch]         = useState("");
-  const [status, setStatus]         = useState("All");
-  const [service, setService]       = useState("All");
-  const [sort, setSort]             = useState("date-newest");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("All");
+  const [service, setService] = useState("All");
+  const [sort, setSort] = useState("date-newest");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [page, setPage]             = useState(1);
+  const [page, setPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
   const filterRef = useRef(null);
@@ -71,11 +72,12 @@ const BookingTable = ({ bookings = [] }) => {
       const q = search.toLowerCase();
       const customerName = `${b.user?.firstName || ""} ${b.user?.lastName || ""}`.toLowerCase();
       const gameName = (b.game?.name || "").toLowerCase();
+      const bookingId = (b.id || "").toLowerCase();
       const displayStatus = getDisplayStatus(b);
 
       return (
-        (!q || customerName.includes(q) || gameName.includes(q)) &&
-        (status  === "All" || displayStatus === status)  &&
+        (!q || customerName.includes(q) || gameName.includes(q) || bookingId.includes(q)) &&
+        (status === "All" || displayStatus === status) &&
         (service === "All" || b.game?.name === service)
       );
     });
@@ -83,13 +85,13 @@ const BookingTable = ({ bookings = [] }) => {
     data.sort((a, b) => {
       const timeA = new Date(a.startTime).getTime();
       const timeB = new Date(b.startTime).getTime();
-      const amtA  = Number(a.totalAmount) || 0;
-      const amtB  = Number(b.totalAmount) || 0;
+      const amtA = Number(a.totalAmount) || 0;
+      const amtB = Number(b.totalAmount) || 0;
 
-      if (sort === "date-newest")  return timeB - timeA;
-      if (sort === "date-oldest")  return timeA - timeB;
+      if (sort === "date-newest") return timeB - timeA;
+      if (sort === "date-oldest") return timeA - timeB;
       if (sort === "payment-high") return amtB - amtA;
-      if (sort === "payment-low")  return amtA - amtB;
+      if (sort === "payment-low") return amtA - amtB;
       return 0;
     });
 
@@ -98,8 +100,8 @@ const BookingTable = ({ bookings = [] }) => {
 
   // Pagination
   const totalPages = Math.ceil(processed.length / ITEMS_PER_PAGE);
-  const curPage    = Math.min(page, Math.max(totalPages, 1));
-  const pageData   = processed.slice((curPage - 1) * ITEMS_PER_PAGE, curPage * ITEMS_PER_PAGE);
+  const curPage = Math.min(page, Math.max(totalPages, 1));
+  const pageData = processed.slice((curPage - 1) * ITEMS_PER_PAGE, curPage * ITEMS_PER_PAGE);
 
   const hasFilters = search || status !== "All" || service !== "All" || sort !== "date-newest";
 
@@ -121,7 +123,7 @@ const BookingTable = ({ bookings = [] }) => {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search bookings..."
+              placeholder="Search by name, game, or booking ID..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-9 pr-3 py-2 bg-gray-100 text-gray-800 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-[#306BAC]"
@@ -141,20 +143,24 @@ const BookingTable = ({ bookings = [] }) => {
             {filterOpen && (
               <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-4 space-y-3">
                 {[
-                  { label: "Sort By", value: sort, setter: setSort, options: [
-                    ["date-newest", "Date: Newest First"],
-                    ["date-oldest", "Date: Oldest First"],
-                    ["payment-high", "Payment: High → Low"],
-                    ["payment-low",  "Payment: Low → High"],
-                  ]},
-                  { label: "Status", value: status, setter: setStatus, options: [
-                    ["All","All Statuses"],
-                    ["PAID","Paid"],
-                    ["PENDING","Pending"],
-                    ["COMPLETED","Completed"],
-                    ["CANCELLED","Cancelled"],
-                    ["EXPIRED","Expired"],
-                  ]},
+                  {
+                    label: "Sort By", value: sort, setter: setSort, options: [
+                      ["date-newest", "Date: Newest First"],
+                      ["date-oldest", "Date: Oldest First"],
+                      ["payment-high", "Payment: High → Low"],
+                      ["payment-low", "Payment: Low → High"],
+                    ]
+                  },
+                  {
+                    label: "Status", value: status, setter: setStatus, options: [
+                      ["All", "All Statuses"],
+                      ["PAID", "Paid"],
+                      ["PENDING", "Pending"],
+                      ["COMPLETED", "Completed"],
+                      ["CANCELLED", "Cancelled"],
+                      ["EXPIRED", "Expired"],
+                    ]
+                  },
                   { label: "Game / Service", value: service, setter: setService, options: services.map((s) => [s, s === "All" ? "All Games" : s]) },
                 ].map(({ label, value, setter, options }) => (
                   <div key={label}>
@@ -185,6 +191,7 @@ const BookingTable = ({ bookings = [] }) => {
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-gray-100">
+              <th className="pb-3 pr-6 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap w-[5%]">No.</th>
               {["Customer", "Game / Service", "Payment", "Date", "Time Range", "Status"].map((h) => (
                 <th key={h} className="pb-3 pr-6 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   {h}
@@ -196,7 +203,9 @@ const BookingTable = ({ bookings = [] }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {pageData.length > 0 ? pageData.map((b) => {
+            {pageData.length > 0 ? pageData.map((b, index) => {
+              const absoluteIndex = (curPage - 1) * ITEMS_PER_PAGE + index + 1;
+              const formattedIndex = String(absoluteIndex).padStart(2, "0");
               const start = new Date(b.startTime);
               const end = new Date(start.getTime() + (b.durationMin || 0) * 60 * 1000);
               const dateStr = start.toLocaleDateString("en-GB").split("/").join("-");
@@ -205,6 +214,7 @@ const BookingTable = ({ bookings = [] }) => {
 
               return (
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="py-4 pr-6 text-sm text-gray-400 font-medium whitespace-nowrap">{formattedIndex}</td>
                   <td className="py-4 pr-6 text-sm font-semibold text-gray-800 whitespace-nowrap">
                     {b.user ? `${b.user.firstName || "—"} ${b.user.lastName || ""}` : "—"}
                   </td>
@@ -237,38 +247,11 @@ const BookingTable = ({ bookings = [] }) => {
         </table>
       </TableScrollWrapper>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-end items-center gap-1.5 mt-5">
-          <button
-            onClick={() => setPage((p) => Math.max(p - 1, 1))}
-            disabled={curPage === 1}
-            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => setPage(n)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                curPage === n ? "bg-[#306BAC] text-white" : "text-gray-500 hover:bg-gray-50 border border-transparent"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-            disabled={curPage === totalPages}
-            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={curPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {/* Portal Details Modal */}
       {selectedBooking && (
