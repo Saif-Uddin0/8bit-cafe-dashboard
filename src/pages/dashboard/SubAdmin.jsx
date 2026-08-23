@@ -5,10 +5,16 @@ import { toast } from "react-hot-toast";
 import SubAdminTable from "../../components/subadmin/SubAdminTable";
 import AddSubAdminModal from "../../components/subadmin/AddSubAdminModal";
 import useAxiosSecure from "../../hooks/useAxios";
+import { useAuth } from "../Provider/AuthProvider";
 
 const SubAdmin = () => {
   const axiosSecure = useAxiosSecure();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Safety net: never fire this query for SUB_ADMIN users
+  // (AdminOnlyRoute already blocks the page, but this adds a second layer)
+  const isAdmin = user?.role !== "SUB_ADMIN";
 
   // ── Fetch all sub-admins ──
   const { data: admins = [], isLoading, isError, error } = useQuery({
@@ -22,6 +28,7 @@ const SubAdmin = () => {
       if (Array.isArray(res.data))   return res.data;
       return [];
     },
+    enabled: isAdmin,
   });
 
   return (

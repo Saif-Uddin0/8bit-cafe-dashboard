@@ -80,7 +80,20 @@ const Sidebar = ({ closeSidebar }) => {
       return res.data?.data ?? {};
     },
     enabled: !!token,
+    staleTime: 0, // always keep fresh for role-based UI
   });
+
+  // Derive role — prefer live API, then user context, then raw localStorage
+  // Reading localStorage directly gives an instant value before the API responds,
+  // preventing a flash where Sub Admin briefly appears for SUB_ADMIN users.
+  const storedRole = localStorage.getItem("role") || "";
+  const role = adminData?.role || user?.role || storedRole;
+  const isSubAdmin = role === "SUB_ADMIN";
+
+  // Hide the Sub Admin entry for SUB_ADMIN users
+  const visibleMenuItems = isSubAdmin
+    ? menuItems.filter((item) => item.path !== "/sub-admin")
+    : menuItems;
 
   const handleLogout = () => {
     logout();
@@ -132,8 +145,9 @@ const Sidebar = ({ closeSidebar }) => {
 
             <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
               {(() => {
-                const displayRole = adminData?.role || user?.role || "Admin";
-                return displayRole.charAt(0).toUpperCase() + displayRole.slice(1).toLowerCase();
+                const displayRole = adminData?.role || user?.role || "Guest";
+                const cleanedRole = displayRole.trim().toLowerCase().replace(/-/g, " ");
+                return cleanedRole.charAt(0).toUpperCase() + cleanedRole.slice(1);
               })()}
             </p>
           </div>
@@ -142,7 +156,7 @@ const Sidebar = ({ closeSidebar }) => {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2 px-2">
-        {menuItems.map(({ path, label, icon: Icon }) => (
+        {visibleMenuItems.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}

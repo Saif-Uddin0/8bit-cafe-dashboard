@@ -1,31 +1,26 @@
-import React from "react";
-import { Users, Gamepad2, CupSoda } from "lucide-react";
+import { Users, UserCheck, UserX } from "lucide-react";
 
-const LeadsStatCards = ({ leads = [] }) => {
-  const totalLeads = leads.length;
-  const gameLeads = leads.filter((l) => l.source === "Game").length;
-  const foodLeads = leads.filter((l) => l.source === "Food").length;
-
+const LeadsStatCards = ({ totalLeads = 0, activeLeads, inactiveLeads }) => {
   const stats = [
     {
-      title: "TOTAL LEADS",
+      title: "TOTAL CUSTOMERS",
       value: totalLeads,
       icon: Users,
       bgColor: "bg-[#234EB71A]",
       iconColor: "text-black",
     },
     {
-      title: "GAME LEADS",
-      value: gameLeads,
-      icon: Gamepad2,
-      bgColor: "bg-[#FEF5E7]",
+      title: "ACTIVE MEMBERS",
+      value: activeLeads ?? "—",
+      icon: UserCheck,
+      bgColor: "bg-[#ECFDF5]",
       iconColor: "text-black",
     },
     {
-      title: "FOOD LEADS",
-      value: foodLeads,
-      icon: CupSoda,
-      bgColor: "bg-[#7744B31A]",
+      title: "INACTIVE MEMBERS",
+      value: inactiveLeads ?? "—",
+      icon: UserX,
+      bgColor: "bg-[#FEF2F2]",
       iconColor: "text-black",
     },
   ];
@@ -37,10 +32,10 @@ const LeadsStatCards = ({ leads = [] }) => {
         return (
           <div
             key={idx}
-            className={`p-6 rounded-2xl flex flex-col justify-between h-[150px] shadow-sm border border-gray-100/50 ${stat.bgColor} transition-all duration-300 hover:scale-[1.02]`}
+            className={`p-6 rounded-2xl flex flex-col justify-between h-[150px] shadow-sm border border-gray-100/50 ${stat.bgColor} transition-all duration-300`}
           >
             <div className="flex items-center justify-between">
-              <span className={`${stat.iconColor}`}>
+              <span className={stat.iconColor}>
                 <IconComponent size={24} strokeWidth={1.8} />
               </span>
             </div>

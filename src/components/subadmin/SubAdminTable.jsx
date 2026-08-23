@@ -23,18 +23,18 @@ const InitialsAvatar = ({ firstName = "", lastName = "" }) => {
 };
 
 const SubAdminTable = ({ admins = [] }) => {
-  const axiosSecure  = useAxiosSecure();
-  const queryClient  = useQueryClient();
+  const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
 
-  const [search,      setSearch]      = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [filterOpen,  setFilterOpen]  = useState(false);
-  const [page,        setPage]        = useState(1);
-  const [viewAdmin,   setViewAdmin]   = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [viewAdmin, setViewAdmin] = useState(null);
 
   // For the three-dot action menu
-  const [activeRow,   setActiveRow]   = useState(null);
-  const menuRef   = useRef({});
+  const [activeRow, setActiveRow] = useState(null);
+  const menuRef = useRef({});
   const filterRef = useRef(null);
 
   // Close dropdowns on outside click
@@ -57,17 +57,17 @@ const SubAdminTable = ({ admins = [] }) => {
 
 
   const { mutate: updateStatus, variables: updatingVars, isPending: isStatusPending } = useMutation({
-   mutationFn: async ({ adminId, newStatus }) => {
-  const res = await axiosSecure.patch(
-    "/api/user/update-super-admin-status",
-    {
-      status: newStatus,
-      user: adminId,
-    }
-  );
+    mutationFn: async ({ adminId, newStatus }) => {
+      const res = await axiosSecure.patch(
+        "/api/user/update-super-admin-status",
+        {
+          status: newStatus,
+          user: adminId,
+        }
+      );
 
-  return res.data;
-},
+      return res.data;
+    },
     onSuccess: (data) => {
       toast.success(data?.message || "Status updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["subAdmins"] });
@@ -84,7 +84,7 @@ const SubAdminTable = ({ admins = [] }) => {
 
   const handleStatusToggle = (admin) => {
     const currentStatus = admin.status?.toUpperCase();
-    const newStatus     = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
     updateStatus({ adminId: admin.id, newStatus });
   };
 
@@ -92,13 +92,13 @@ const SubAdminTable = ({ admins = [] }) => {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return admins.filter((a) => {
-      const name  = `${a.firstName ?? ""} ${a.lastName ?? ""}`.toLowerCase();
+      const name = `${a.firstName ?? ""} ${a.lastName ?? ""}`.toLowerCase();
       const email = (a.email ?? "").toLowerCase();
       const matchSearch = !q || name.includes(q) || email.includes(q);
       const normalizedStatus = (a.status ?? "").toUpperCase();
       const matchStatus =
         statusFilter === "All" ||
-        (statusFilter === "Active"   && normalizedStatus === "ACTIVE") ||
+        (statusFilter === "Active" && normalizedStatus === "ACTIVE") ||
         (statusFilter === "Inactive" && normalizedStatus === "INACTIVE");
       return matchSearch && matchStatus;
     });
@@ -106,8 +106,8 @@ const SubAdminTable = ({ admins = [] }) => {
 
   // ── Client-side pagination ──
   const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
-  const curPage    = Math.min(page, totalPages);
-  const pageData   = filtered.slice((curPage - 1) * ITEMS_PER_PAGE, curPage * ITEMS_PER_PAGE);
+  const curPage = Math.min(page, totalPages);
+  const pageData = filtered.slice((curPage - 1) * ITEMS_PER_PAGE, curPage * ITEMS_PER_PAGE);
 
   const hasFilters = search || statusFilter !== "All";
 
@@ -120,7 +120,7 @@ const SubAdminTable = ({ admins = [] }) => {
 
   const statusBadge = (status) => {
     const upper = (status ?? "").toUpperCase();
-    if (upper === "ACTIVE")   return "bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold";
+    if (upper === "ACTIVE") return "bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold";
     return "bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-semibold";
   };
 
@@ -149,11 +149,10 @@ const SubAdminTable = ({ admins = [] }) => {
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setFilterOpen((v) => !v)}
-                className={`p-2 rounded-lg border transition-colors ${
-                  hasFilters
+                className={`p-2 rounded-lg border transition-colors ${hasFilters
                     ? "bg-[#532C89]/10 border-[#532C89] text-[#532C89]"
                     : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
-                }`}
+                  }`}
                 title="Filters"
               >
                 <ListFilter size={17} />
@@ -208,9 +207,9 @@ const SubAdminTable = ({ admins = [] }) => {
               {pageData.length > 0 ? pageData.map((admin, index) => {
                 const absoluteIndex = (curPage - 1) * ITEMS_PER_PAGE + index + 1;
                 const formattedIndex = String(absoluteIndex).padStart(2, "0");
-                const fullName      = `${admin.firstName ?? ""} ${admin.lastName ?? ""}`.trim();
-                const normalStatus  = (admin.status ?? "").toUpperCase();
-                const isUpdating    = isStatusPending && updatingVars?.adminId === admin.id;
+                const fullName = `${admin.firstName ?? ""} ${admin.lastName ?? ""}`.trim();
+                const normalStatus = (admin.status ?? "").toUpperCase();
+                const isUpdating = isStatusPending && updatingVars?.adminId === admin.id;
 
                 return (
                   <tr key={admin.id} className="hover:bg-gray-50/50 transition-colors">
@@ -289,11 +288,10 @@ const SubAdminTable = ({ admins = [] }) => {
                               <button
                                 type="button"
                                 onClick={() => { setActiveRow(null); handleStatusToggle(admin); }}
-                                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${
-                                  normalStatus === "ACTIVE"
+                                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${normalStatus === "ACTIVE"
                                     ? "bg-white border-red-400 text-red-500 hover:bg-red-500 hover:text-white"
                                     : "bg-white border-green-500 text-green-600 hover:bg-green-500 hover:text-white"
-                                }`}
+                                  }`}
                               >
                                 {normalStatus === "ACTIVE" ? "Set Inactive" : "Set Active"}
                               </button>
@@ -321,7 +319,7 @@ const SubAdminTable = ({ admins = [] }) => {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table>F
         </TableScrollWrapper>
 
         <Pagination
