@@ -22,7 +22,15 @@ const Leads = () => {
       });
       if (searchTerm.trim())      params.append("searchTerm", searchTerm.trim());
       if (statusFilter !== "all") params.append("status",     statusFilter);
-      const res = await axiosSecure.get(`/api/user/allUsers?${params.toString()}`);
+
+      const headers = {
+        page: String(currentPage),
+        limit: "10",
+        searchTerm: searchTerm.trim() || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      };
+
+      const res = await axiosSecure.get(`/api/user/allUsers?${params.toString()}`, { headers });
       return res.data;
     },
     placeholderData: keepPreviousData,
@@ -57,7 +65,7 @@ const Leads = () => {
   const handleFilter = (val) => { setStatusFilter(val); setCurrentPage(1); };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto px-2 md:px-4 pb-8">
+    <div className="space-y-6 max-w-[1600px] mx-auto px-2 md:px-4 mt-2 pb-8">
       {isLoading && !leads.length ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
           <div className="w-12 h-12 border-4 border-[#532C89] border-t-transparent rounded-full animate-spin" />

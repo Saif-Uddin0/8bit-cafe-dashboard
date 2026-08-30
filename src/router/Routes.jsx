@@ -16,6 +16,7 @@ const Schedule = lazy(() => import("../pages/dashboard/Schedule"));
 const Booking = lazy(() => import("../pages/dashboard/Booking"));
 const SubAdmin = lazy(() => import("../pages/dashboard/SubAdmin"));
 const Settings = lazy(() => import("../pages/dashboard/Settings"));
+const Transaction = lazy(() => import("../pages/dashboard/Transaction"));
 
 const Login = lazy(() => import("../pages/authentications/Login"));
 const ForgetPassword = lazy(() => import("../pages/authentications/ForgetPassword"));
@@ -71,6 +72,10 @@ export const router = createBrowserRouter([
                     {
                         path: "booking",
                         element: withSuspense(Booking)
+                    },
+                    {
+                        path: "transaction",
+                        element: withSuspense(Transaction)
                     },
                     {
                         element: <AdminOnlyRoute />,

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { CalendarDays, CalendarClock, CheckCircle2 } from "lucide-react";
 
 // Helper to check if a UTC timestamp is today in client's timezone
 const isToday = (utcString) => {
@@ -60,45 +61,52 @@ const BookingStatCards = ({ bookings = [] }) => {
 
     return [
       {
-        title: "TODAY'S BOOKINGS",
+        title: "Today's Bookings",
         value: todayCount,
-        bgColor: "bg-[#6C04D7]/22",
-        textColor: "text-[#532C89]",
+        icon: CalendarDays,
+        bgColor: "bg-[#6C04D7]/10",
       },
       {
-        title: "UPCOMING",
+        title: "Upcoming",
         value: upcomingCount,
-        bgColor: "bg-[#FFCB1F]/22",
-        textColor: "text-[#C28130]",
+        icon: CalendarClock,
+        bgColor: "bg-[#FFCB1F]/20",
       },
       {
-        title: "COMPLETED",
+        title: "Completed",
         value: completedCount,
+        icon: CheckCircle2,
         bgColor: "bg-[#D2F4E2]",
-        textColor: "text-[#008F11]/22",
       },
     ];
   }, [bookings]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-      {stats.map((stat, idx) => (
-        <div
-          key={idx}
-          className={`p-6 rounded-2xl flex flex-col justify-between h-[120px] shadow-sm border border-gray-100/30 ${stat.bgColor} transition-all duration-300 hover:scale-[1.02]`}
-        >
-          <div>
-            <h3 className="text-3xl font-extrabold text-gray-800 leading-none">
-              {stat.value}
-            </h3>
+      {stats.map((stat, idx) => {
+        const IconComponent = stat.icon;
+        return (
+          <div
+            key={idx}
+            className={`py-6 px-8 rounded-2xl flex flex-col justify-between h-[150px] shadow-sm border border-gray-100/50 ${stat.bgColor} transition-all duration-300 hover:scale-[1.01]`}
+          >
+            {/* Icon */}
+            <div className="text-gray-700">
+              <IconComponent size={24} strokeWidth={1.8} />
+            </div>
+
+            {/* Value & Label */}
+            <div className="mt-4">
+              <h3 className="text-3xl font-bold text-gray-900 leading-tight">
+                {stat.value}
+              </h3>
+              <p className="text-[10px] md:text-xs font-bold text-[#64748B] tracking-wider mt-1 uppercase">
+                {stat.title}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] md:text-xs font-bold text-gray-500 tracking-wider uppercase">
-              {stat.title}
-            </p>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

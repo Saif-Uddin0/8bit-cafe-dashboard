@@ -25,14 +25,14 @@ const inputCls = (err) =>
     err ? "border-red-400" : "border-gray-200"
   }`;
 
-// ── Main component ───────────────────────────────────────────────────────────────
+// ── Main component 
 const EditFoodModal = ({ food, onClose, onUpdated }) => {
   const axiosSecure         = useAxiosSecure();
   const addFileInputRef     = useRef(null);
   const replaceFileInputRef = useRef(null);
   const [replacingId, setReplacingId] = useState(null);
 
-  // ── Fetch food categories ──────────────────────────────────────────────────────
+  // ── Fetch food categories
   const { data: categories = [] } = useQuery({
     queryKey: ["foodCategories"],
     queryFn: async () => {
@@ -44,7 +44,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     },
   });
 
-  // ── Scalar fields ─────────────────────────────────────────────────────────────
+  // ── Scalar fields 
   const normalizeStatus = (s) => {
     if (!s) return "AVAILABLE";
     const up = s.toUpperCase().replace(/[-_\s]/g, "");
@@ -65,7 +65,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     status:            normalizeStatus(food?.status),
   });
 
-  // ── Discount ──────────────────────────────────────────────────────────────────
+  // ── Discount 
   const [isDiscount, setIsDiscount] = useState(
     food?.isDisCount ?? food?.isDiscount ?? false
   );
@@ -74,7 +74,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     food?.discountPercentage ?? food?.discountParcenTage ?? ""
   );
 
-  // ── Images ────────────────────────────────────────────────────────────────────
+  // ── Images 
   const [imagesList, setImagesList] = useState(() =>
     (food?.images || []).map((img, i) => ({
       id:       `orig-${i}`,
@@ -110,7 +110,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     };
   }, [onClose]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────────
+  // ── Handlers 
   const setField = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const handleDiscountChange = (val) => {
@@ -195,7 +195,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
   // Visible = not deleted
   const visibleImages = imagesList.filter((img) => !img.deleted);
 
-  // ── Validation ────────────────────────────────────────────────────────────────
+  // ── Validation 
   const validate = () => {
     const e = {};
     if (!form.name.trim())
@@ -215,7 +215,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     return e;
   };
 
-  // ── PATCH payload ─────────────────────────────────────────────────────────────
+  // ── PATCH payload 
   const buildPayload = () => {
     const fd = new FormData();
 
@@ -253,7 +253,7 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     return fd;
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────────
+  // ── Submit 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -276,14 +276,13 @@ const EditFoodModal = ({ food, onClose, onUpdated }) => {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────────
   return ReactDOM.createPortal(
     <div
       className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col"
+        className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col"
         style={{ maxHeight: "calc(100vh - 24px)", animation: "modalIn 0.2s ease-out" }}
         onClick={(e) => e.stopPropagation()}
       >

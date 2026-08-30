@@ -22,6 +22,7 @@ const Navbar = ({ setSidebarOpen }) => {
   '/booking': 'Booking',
   '/sub-admin': 'Sub Admin Management',
   '/setting': 'Admin Settings',
+  '/transaction': 'Transaction',
 };
   const title = switchTitlte[location.pathname] || "Dashboard";
   return (

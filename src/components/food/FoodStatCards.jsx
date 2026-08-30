@@ -5,7 +5,7 @@ import { Utensils, CheckCircle, XCircle } from "lucide-react";
 const FoodStatCards = ({ foods = [] }) => {
   const totalCount = foods.length;
   const availableCount = foods.filter((f) => {
-    if (f.status) return f.status === "Available";
+    if (f.status) return f.status.toUpperCase() === "AVAILABLE";
     return f.isDelete !== true;
   }).length;
   const unavailableCount = totalCount - availableCount;

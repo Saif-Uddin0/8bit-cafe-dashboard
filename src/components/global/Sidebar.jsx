@@ -15,6 +15,7 @@ import {
   Shield,
   Settings,
   X,
+  Receipt,
 } from "lucide-react";
 
 const menuItems = [
@@ -54,6 +55,11 @@ const menuItems = [
     icon: CalendarCheck2,
   },
   {
+    path: "/transaction",
+    label: "Transaction",
+    icon: Receipt,
+  },
+  {
     path: "/sub-admin",
     label: "Sub Admin",
     icon: Shield,
@@ -83,9 +89,7 @@ const Sidebar = ({ closeSidebar }) => {
     staleTime: 0, // always keep fresh for role-based UI
   });
 
-  // Derive role — prefer live API, then user context, then raw localStorage
-  // Reading localStorage directly gives an instant value before the API responds,
-  // preventing a flash where Sub Admin briefly appears for SUB_ADMIN users.
+
   const storedRole = localStorage.getItem("role") || "";
   const role = adminData?.role || user?.role || storedRole;
   const isSubAdmin = role === "SUB_ADMIN";
@@ -122,37 +126,42 @@ const Sidebar = ({ closeSidebar }) => {
 
 
 
-      {/* Logo */}
-      <Link
-        to="/"
-        className="flex flex-col items-center pt-5 pb-5"
-      >
-        <img
-          src={logo}
-          className="w-16 h-16 md:w-20 md:h-20 rounded-xl"
-          alt="logo"
-        />
+<div className="flex flex-col items-center pt-5 pb-5">
+  <Link to="/">
+    <img
+      src={logo}
+      className="w-16 h-16 md:w-20 md:h-20 rounded-xl"
+      alt="logo"
+    />
+  </Link>
 
-        {/* Divider */}
-        <div className="w-full mt-5">
-          <div className="border-t border-[#E8EAED]"></div>
-        </div>
+  {/* Divider */}
+  <div className="w-full mt-5">
+    <div className="border-t border-[#E8EAED]"></div>
+  </div>
 
-        {/* Admin Badge */}
-        <div className="w-full px-2 mt-2.5">
-          <div className="bg-white rounded-full h-8 px-3 flex items-center justify-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
+  {/* Admin Badge */}
+  <div className="w-full px-2 mt-2.5">
+    <div className="bg-white rounded-full h-8 px-3 flex items-center justify-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
 
-            <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
-              {(() => {
-                const displayRole = adminData?.role || user?.role || "Guest";
-                const cleanedRole = displayRole.trim().toLowerCase().replace(/-/g, " ");
-                return cleanedRole.charAt(0).toUpperCase() + cleanedRole.slice(1);
-              })()}
-            </p>
-          </div>
-        </div>
-      </Link>
+      <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
+        {(() => {
+          const displayRole = adminData?.role || user?.role || "Guest";
+          const cleanedRole = displayRole
+            .trim()
+            .toLowerCase()
+            .replace(/-/g, " ");
+
+          return (
+            cleanedRole.charAt(0).toUpperCase() +
+            cleanedRole.slice(1)
+          );
+        })()}
+      </p>
+    </div>
+  </div>
+</div>
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2 px-2">

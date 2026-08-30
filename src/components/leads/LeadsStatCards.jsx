@@ -3,25 +3,22 @@ import { Users, UserCheck, UserX } from "lucide-react";
 const LeadsStatCards = ({ totalLeads = 0, activeLeads, inactiveLeads }) => {
   const stats = [
     {
-      title: "TOTAL CUSTOMERS",
+      title: "Total Customers",
       value: totalLeads,
       icon: Users,
       bgColor: "bg-[#234EB71A]",
-      iconColor: "text-black",
     },
     {
-      title: "ACTIVE MEMBERS",
+      title: "Active Members",
       value: activeLeads ?? "—",
       icon: UserCheck,
       bgColor: "bg-[#ECFDF5]",
-      iconColor: "text-black",
     },
     {
-      title: "INACTIVE MEMBERS",
+      title: "Inactive Members",
       value: inactiveLeads ?? "—",
       icon: UserX,
       bgColor: "bg-[#FEF2F2]",
-      iconColor: "text-black",
     },
   ];
 
@@ -32,15 +29,16 @@ const LeadsStatCards = ({ totalLeads = 0, activeLeads, inactiveLeads }) => {
         return (
           <div
             key={idx}
-            className={`p-6 rounded-2xl flex flex-col justify-between h-[150px] shadow-sm border border-gray-100/50 ${stat.bgColor} transition-all duration-300`}
+            className={`py-6 px-8 rounded-2xl flex flex-col justify-between h-[150px] shadow-sm border border-gray-100/50 ${stat.bgColor} transition-all duration-300 hover:scale-[1.01]`}
           >
-            <div className="flex items-center justify-between">
-              <span className={stat.iconColor}>
-                <IconComponent size={24} strokeWidth={1.8} />
-              </span>
+            {/* Icon */}
+            <div className="text-gray-700">
+              <IconComponent size={24} strokeWidth={1.8} />
             </div>
+
+            {/* Value & Label */}
             <div className="mt-4">
-              <h3 className="text-2xl md:text-3xl font-bold text-[#191C1E] leading-tight">
+              <h3 className="text-3xl font-bold text-gray-900 leading-tight">
                 {stat.value}
               </h3>
               <p className="text-[10px] md:text-xs font-bold text-[#64748B] tracking-wider mt-1 uppercase">

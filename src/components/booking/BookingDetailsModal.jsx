@@ -2,50 +2,65 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  X, Clock, User, Gamepad2, CreditCard, RefreshCw,
-  Loader2, Copy, Check, Calendar, BadgeCheck, Timer,
+  X,
+  Clock,
+  User,
+  Gamepad2,
+  CreditCard,
+  RefreshCw,
+  Loader2,
+  Copy,
+  Check,
+  Calendar,
+  BadgeCheck,
+  Timer,
 } from "lucide-react";
 import useAxiosSecure from "../../hooks/useAxios";
 import ImageCarousel from "../global/ImageCarousel";
 
-// ─── Status palettes ────────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  PAID:      "bg-emerald-50 text-emerald-700 border-emerald-200",
-  PENDING:   "bg-amber-50  text-amber-700  border-amber-200",
-  COMPLETED: "bg-blue-50   text-blue-700   border-blue-200",
-  CANCELLED: "bg-red-50    text-red-600    border-red-200",
-  EXPIRED:   "bg-red-50    text-red-600    border-red-200",
+  PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+  COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
+  CANCELLED: "bg-red-50 text-red-600 border-red-200",
+  EXPIRED: "bg-red-50 text-red-600 border-red-200",
 };
 
 const GAME_STATUS_STYLES = {
-  NOT_STARTED: "bg-gray-100  text-gray-500  border-gray-200",
-  IN_PROGRESS: "bg-amber-50  text-amber-700 border-amber-200",
-  ENDED:       "bg-blue-50   text-blue-700  border-blue-200",
+  NOT_STARTED: "bg-gray-50 text-gray-600 border-gray-200",
+  IN_PROGRESS: "bg-amber-50 text-amber-700 border-amber-200",
+  ENDED: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
-// ─── Inline copy-to-clipboard button ────────────────────────────────────────
 const CopyButton = ({ value }) => {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+
     if (!value) return;
+
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch {
-      /* fallback: select-all works */
+      // Clipboard may not be available in some browsers.
     }
   };
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
-      title={copied ? "Copied!" : "Copy to clipboard"}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ml-2 shrink-0 border ${
+      title={copied ? "Copied" : "Copy"}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-semibold shrink-0 transition-colors cursor-pointer ${
         copied
           ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-          : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-[#532C89]/10 hover:text-[#532C89] hover:border-[#532C89]/20"
+          : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-[#532C89]/5 hover:text-[#532C89] hover:border-[#532C89]/20"
       }`}
     >
       {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -54,54 +69,249 @@ const CopyButton = ({ value }) => {
   );
 };
 
-// ─── Section heading ─────────────────────────────────────────────────────────
-const SectionHeading = ({ icon: Icon, label, extra }) => (
-  <div className="flex items-center gap-2 mb-3">
-    <div className="w-10 h-10 rounded-lg bg-[#532C89]/10 flex items-center justify-center shrink-0">
-      <Icon size={17} className="text-[#532C89]" />
-    </div>
-    <h4 className="text-sm font-bold text-gray-700 tracking-wide">{label}</h4>
-    {extra}
-  </div>
-);
+const SectionHeading = ({ icon: Icon, label, extra }) => {
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <Icon size={16} className="text-[#532C89]" />
 
-// ─── Field row ───────────────────────────────────────────────────────────────
-const Field = ({ label, value, mono, copy }) => (
-  <div>
-    <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-      {label}
-    </span>
-    <div className="flex items-center flex-wrap gap-1">
-      <span
-        className={`text-sm font-bold text-gray-800 leading-snug ${mono ? "font-mono" : ""} ${copy ? "select-all" : ""}`}
-      >
-        {value || "—"}
+      <h3 className="text-[13px] font-bold text-gray-700">
+        {label}
+      </h3>
+
+      <div className="h-px flex-1 bg-gray-100" />
+
+      {extra}
+    </div>
+  );
+};
+
+const Field = ({ label, value, mono = false, copy = false }) => {
+  const hasValue =
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    value !== "—";
+
+  return (
+    <div className="min-w-0">
+      <span className="block text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+        {label}
       </span>
-      {copy && value && <CopyButton value={value} />}
-    </div>
-  </div>
-);
 
-// ─── Main component ──────────────────────────────────────────────────────────
-const BookingDetailsModal = ({ bookingId, initialData = null, onClose }) => {
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className={`text-sm font-semibold text-gray-800 leading-snug min-w-0 ${
+            mono ? "font-mono text-[12px]" : ""
+          } ${copy && hasValue ? "select-all" : ""}`}
+        >
+          {hasValue ? value : "N/A"}
+        </span>
+
+        {copy && hasValue && <CopyButton value={value} />}
+      </div>
+    </div>
+  );
+};
+
+const StatusBadge = ({ status, type = "booking" }) => {
+  const statusKey = (status || "").toUpperCase();
+
+  const styles =
+    type === "game"
+      ? GAME_STATUS_STYLES
+      : STATUS_STYLES;
+
+  const className =
+    styles[statusKey] ||
+    "bg-gray-50 text-gray-500 border-gray-200";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide ${className}`}
+    >
+      {statusKey === "PAID" || statusKey === "COMPLETED" ? (
+        <BadgeCheck size={11} />
+      ) : statusKey === "IN_PROGRESS" ? (
+        <Timer size={11} />
+      ) : null}
+
+      {status ? status.replace(/_/g, " ") : "N/A"}
+    </span>
+  );
+};
+
+const PaymentCard = ({ payment, index }) => {
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+      {/* Payment header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-3.5 bg-gray-50/70 border-b border-gray-100">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-[#532C89]/10 flex items-center justify-center shrink-0">
+            <CreditCard size={15} className="text-[#532C89]" />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800">
+              Payment {index + 1}
+            </p>
+
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {payment.paymentType || "GAME"}
+            </p>
+          </div>
+        </div>
+
+        <StatusBadge status={payment.status} />
+      </div>
+
+      <div className="p-4 sm:p-5 space-y-5">
+        {/* Amount and method */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+              Amount Paid
+            </span>
+
+            <span className="text-xl font-bold text-gray-900">
+              ৳{payment.amount ?? "0"}
+            </span>
+          </div>
+
+          <Field
+            label="Payment Method"
+            value={payment.paymentMethod}
+          />
+        </div>
+
+        {/* Transaction IDs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+          <div className="min-w-0">
+            <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+              Transaction ID
+            </span>
+
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 min-w-0">
+              <span className="text-[12px] font-semibold font-mono text-gray-700 truncate flex-1 select-all">
+                {payment.transactionId || "N/A"}
+              </span>
+
+              {payment.transactionId && (
+                <CopyButton value={payment.transactionId} />
+              )}
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+              Customer Order ID
+            </span>
+
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 min-w-0">
+              <span className="text-[12px] font-semibold font-mono text-gray-700 truncate flex-1 select-all">
+                {payment.customerOrderId || "N/A"}
+              </span>
+
+              {payment.customerOrderId && (
+                <CopyButton value={payment.customerOrderId} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Customer details */}
+        <div className="pt-4 border-t border-gray-100">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-3">
+            Customer Details
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Field
+              label="Name"
+              value={payment.customerName}
+            />
+
+            <Field
+              label="Email"
+              value={payment.customerEmail}
+              copy
+            />
+
+            <Field
+              label="Phone"
+              value={payment.customerPhone}
+              copy
+            />
+          </div>
+        </div>
+
+        {/* Payment dates */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 pt-3 border-t border-gray-100">
+          <p className="text-[11px] text-gray-400">
+            Created:
+            <span className="ml-1.5 font-semibold text-gray-600">
+              {formatDate(payment.createdAt)}
+            </span>
+          </p>
+
+          <p className="text-[11px] text-gray-400">
+            Updated:
+            <span className="ml-1.5 font-semibold text-gray-600">
+              {formatDate(payment.updatedAt)}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BookingDetailsModal = ({
+  bookingId,
+  initialData = null,
+  onClose,
+}) => {
   const axiosSecure = useAxiosSecure();
 
-  // Scroll-lock + Escape key
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
     };
   }, [onClose]);
 
-  // Fetch full details; seed immediately from list-row data (no spinner)
-  const { data: detailsResponse, isFetching, isError, error, refetch } = useQuery({
+  const {
+    data: detailsResponse,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["bookingDetails", bookingId],
     queryFn: async () => {
-      const res = await axiosSecure.get(`/api/booking/booking-details/${bookingId}`);
+      const res = await axiosSecure.get(
+        `/api/booking/booking-details/${bookingId}`
+      );
+
       return res.data;
     },
     enabled: !!bookingId,
@@ -113,306 +323,381 @@ const BookingDetailsModal = ({ bookingId, initialData = null, onClose }) => {
 
   if (!bookingId) return null;
 
-  const booking  = detailsResponse?.data;
-  const user     = booking?.user;
-  const game     = booking?.game;
+  const booking = detailsResponse?.data;
+  const user = booking?.user;
+  const game = booking?.game;
   const payments = booking?.payments;
-  const isEnriching = isFetching && !detailsResponse?.data?.payments;
 
-  // ── Time helpers ────────────────────────────────────────────────────────
-  const fmt = (d) => {
-    let h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
-    const ap = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-    return `${String(h).padStart(2, "0")}:${m} ${ap}`;
+  const isEnriching =
+    isFetching && !detailsResponse?.data?.payments;
+
+  const formatTime = (date) => {
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    const period = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+
+    return `${String(hour12).padStart(2, "0")}:${minutes} ${period}`;
   };
 
-  const { dateStr, timeRange } = (() => {
-    if (!booking?.startTime) return { dateStr: "—", timeRange: "—" };
-    const s = new Date(booking.startTime);
-    const e = new Date(s.getTime() + (booking.durationMin || 0) * 60000);
-    return {
-      dateStr: s.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-      timeRange: `${fmt(s)} – ${fmt(e)}`,
-    };
-  })();
+  const formatDate = (date) => {
+    if (!date) return "N/A";
 
-  // ── Booking status badge ────────────────────────────────────────────────
-  const statusKey = (booking?.status || "").toUpperCase();
-  const statusCls = STATUS_STYLES[statusKey] || "bg-gray-100 text-gray-500 border-gray-200";
-  const gameStatusKey = (booking?.gameStatus || "").toUpperCase();
-  const gameStatusCls = GAME_STATUS_STYLES[gameStatusKey] || "bg-gray-100 text-gray-500 border-gray-200";
+    return new Date(date).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const getBookingTime = () => {
+    if (!booking?.startTime) {
+      return {
+        date: "N/A",
+        time: "N/A",
+      };
+    }
+
+    const start = new Date(booking.startTime);
+
+    const end = new Date(
+      start.getTime() +
+        (booking.durationMin || 0) * 60000
+    );
+
+    return {
+      date: start.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      time: `${formatTime(start)} – ${formatTime(end)}`,
+    };
+  };
+
+  const bookingTime = getBookingTime();
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/55 backdrop-blur-[3px] p-3 sm:p-5"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col"
-        style={{ maxHeight: "calc(100vh - 24px)", animation: "modalIn 0.2s ease-out" }}
+        className="relative bg-white w-full max-w-3xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden flex flex-col"
+        style={{
+          maxHeight: "calc(100vh - 32px)",
+          animation: "modalIn 0.2s ease-out",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ───────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 leading-tight">Booking Details</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+              Booking Details
+            </h2>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer shrink-0 mt-0.5"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* ── Body ─────────────────────────────────────────────────────── */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-5 sm:px-7 py-5">
           {isError ? (
-            <div className="p-5 bg-red-50 border border-red-200 text-red-700 rounded-2xl space-y-3">
-              <p className="text-sm font-semibold">Failed to load booking details: {error?.message || "Unknown error"}</p>
+            <div className="p-5 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm font-semibold text-red-700">
+                Failed to load booking details.
+              </p>
+
+              <p className="text-xs text-red-500 mt-1">
+                {error?.message || "Something went wrong."}
+              </p>
+
               <button
+                type="button"
                 onClick={() => refetch()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-red-200 rounded-xl text-sm font-bold text-red-700 hover:bg-red-50 cursor-pointer transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-red-200 rounded-lg text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
               >
-                <RefreshCw size={13} /> Retry
+                <RefreshCw size={13} />
+                Retry
               </button>
             </div>
           ) : booking ? (
-            <>
-              {/* ── 1. Booking Information ─────────────────────────────── */}
+            <div className="space-y-7">
+              {/* Booking information */}
               <section>
-                <SectionHeading icon={Calendar} label="Booking Information" />
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* Left column */}
-                  <div className="space-y-4">
-                    <Field label="Booking Date" value={dateStr} />
-                    <Field label={`Time Range · ${booking.durationMin ? booking.durationMin + " min" : ""}`} value={timeRange} />
-                    <Field
-                      label="Created On"
-                      value={booking.createdAt
-                        ? new Date(booking.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
-                        : "—"}
-                    />
-                  </div>
-                  {/* Right column */}
-                  <div className="space-y-4">
-                    <div>
-                      <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                        Booking Status
-                      </span>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusCls}`}>
-                        <BadgeCheck size={12} />
-                        {booking.status || "—"}
-                      </span>
+                <SectionHeading
+                  icon={Calendar}
+                  label="Booking Information"
+                />
+
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2">
+                    <div className="p-4 sm:p-5 space-y-5">
+                      <Field
+                        label="Booking Date"
+                        value={bookingTime.date}
+                      />
+
+                      <Field
+                        label={`Time Range${
+                          booking.durationMin
+                            ? ` · ${booking.durationMin} min`
+                            : ""
+                        }`}
+                        value={bookingTime.time}
+                      />
+
+                      <Field
+                        label="Created On"
+                        value={formatDate(booking.createdAt)}
+                      />
                     </div>
-                    <div>
-                      <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                        Game Play Status
-                      </span>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${gameStatusCls}`}>
-                        <Timer size={12} />
-                        {booking.gameStatus?.replace(/_/g, " ") || "—"}
-                      </span>
-                    </div>
-                    {booking.status === "PENDING" && booking.expiresAt && (
+
+                    <div className="p-4 sm:p-5 bg-gray-50/60 border-t sm:border-t-0 sm:border-l border-gray-100 space-y-5">
                       <div>
-                        <span className="block text-xs font-semibold text-red-400 uppercase tracking-wider mb-1">
-                          Expires At
+                        <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+                          Booking Status
                         </span>
-                        <span className="text-sm font-bold text-red-600">
-                          {new Date(booking.expiresAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+
+                        <StatusBadge status={booking.status} />
+                      </div>
+
+                      <div>
+                        <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+                          Game Play Status
                         </span>
+
+                        <StatusBadge
+                          status={booking.gameStatus}
+                          type="game"
+                        />
+                      </div>
+
+                      {booking.status === "PENDING" &&
+                        booking.expiresAt && (
+                          <div>
+                            <span className="block text-[10px] font-bold text-red-400 uppercase tracking-[0.08em] mb-1.5">
+                              Expires At
+                            </span>
+
+                            <span className="text-sm font-semibold text-red-600">
+                              {formatDate(booking.expiresAt)}
+                            </span>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Customer information */}
+              <section>
+                <SectionHeading
+                  icon={User}
+                  label="Customer Information"
+                />
+
+                <div className="border border-gray-200 rounded-xl p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+                    {user?.image ? (
+                      <img
+                        src={user.image}
+                        alt={`${user.firstName || ""} ${
+                          user.lastName || ""
+                        }`}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-gray-200 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#532C89]/10 border border-[#532C89]/10 flex items-center justify-center text-[#532C89] text-xl sm:text-2xl font-bold shrink-0">
+                        {user?.firstName
+                          ? user.firstName[0].toUpperCase()
+                          : "?"}
                       </div>
                     )}
-                  </div>
-                </div>
-              </section>
 
-              {/* ── 2. Customer Information ─────────────────────────────── */}
-              <section>
-                <SectionHeading icon={User} label="Customer Information" />
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex items-center gap-5">
-                  {/* Avatar */}
-                  {user?.image ? (
-                    <img
-                      src={user.image}
-                      alt={`${user.firstName || ""} ${user.lastName || ""}`}
-                      className="w-16 h-16 rounded-2xl object-cover border border-gray-200 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-[#532C89]/10 flex items-center justify-center text-[#532C89] font-bold text-2xl border border-[#532C89]/10 shrink-0">
-                      {user?.firstName ? user.firstName[0].toUpperCase() : "?"}
-                    </div>
-                  )}
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <p className="text-base font-bold text-gray-900 leading-tight">
-                      {user?.firstName || "—"} {user?.lastName || ""}
-                    </p>
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-500">
-                        <span className="font-semibold text-gray-700 select-all">{user?.phone || "No phone"}</span>
-                        <span className="text-gray-300 mx-2">·</span>
-                        <span className="font-semibold text-gray-700 select-all">{user?.email || "No email"}</span>
-                      </p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base font-bold text-gray-900 mb-4">
+                        {user?.firstName || "N/A"}{" "}
+                        {user?.lastName || ""}
+                      </h4>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field
+                          label="Email"
+                          value={user?.email}
+                          copy
+                        />
+
+                        <Field
+                          label="Phone"
+                          value={user?.phone}
+                          copy
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* ── 3. Game Information ─────────────────────────────────── */}
+              {/* Game information */}
               <section>
-                <SectionHeading icon={Gamepad2} label="Game Information" />
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col sm:flex-row gap-5">
-                  {/* Game thumbnail */}
-                  <div className="w-full sm:w-36 h-32 shrink-0 rounded-xl overflow-hidden border border-gray-100 bg-gray-100">
-                    <ImageCarousel images={game?.images} className="w-full h-full object-cover" />
-                  </div>
-                  {/* Game details */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h5 className="text-base font-bold text-gray-900">{game?.name || "—"}</h5>
-                        {game?.category?.name && (
-                          <span className="text-xs font-bold bg-purple-50 text-purple-600 px-2.5 py-0.5 rounded-full border border-purple-100">
-                            {game.category.name}
-                          </span>
-                        )}
+                <SectionHeading
+                  icon={Gamepad2}
+                  label="Game Information"
+                />
+
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="flex flex-col sm:flex-row">
+                    <div className="w-full sm:w-40 h-36 sm:h-auto shrink-0 bg-gray-100">
+                      <ImageCarousel
+                        images={game?.images}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0 p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                            {game?.name || "N/A"}
+                          </h4>
+
+                          {game?.category?.name && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {game.category.name}
+                            </p>
+                          )}
+                        </div>
+
                         {game?.status && (
-                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
-                            game.status === "AVAILABLE" || game.status === "Available"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-red-50 text-red-600 border-red-100"
-                          }`}>
+                          <span
+                            className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase ${
+                              game.status === "AVAILABLE" ||
+                              game.status === "Available"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-red-50 text-red-600 border-red-200"
+                            }`}
+                          >
                             {game.status}
                           </span>
                         )}
                       </div>
+
                       {game?.description && (
-                        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{game.description}</p>
+                        <p className="text-sm text-gray-500 leading-relaxed mt-3 line-clamp-3">
+                          {game.description}
+                        </p>
                       )}
-                    </div>
-                    <div className="flex gap-8 mt-4 pt-3 border-t border-dashed border-gray-200">
-                      <div>
-                        <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Price / 30 Min</span>
-                        <span className="text-base font-bold text-gray-900">৳{game?.price30Min ?? "—"}</span>
-                      </div>
-                      <div>
-                        <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Price / 60 Min</span>
-                        <span className="text-base font-bold text-gray-900">৳{game?.price60Min ?? "—"}</span>
+
+                      <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-gray-100">
+                        <div>
+                          <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1">
+                            30 Minutes
+                          </span>
+
+                          <span className="text-base font-bold text-gray-900">
+                            ৳{game?.price30Min ?? "N/A"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1">
+                            60 Minutes
+                          </span>
+
+                          <span className="text-base font-bold text-gray-900">
+                            ৳{game?.price60Min ?? "N/A"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* ── 4. Payment Information ──────────────────────────────── */}
+              {/* Payment information */}
               <section>
                 <SectionHeading
                   icon={CreditCard}
                   label="Payment Information"
-                  extra={isEnriching && <Loader2 size={13} className="text-gray-300 animate-spin ml-1" />}
+                  extra={
+                    isEnriching ? (
+                      <Loader2
+                        size={14}
+                        className="text-gray-400 animate-spin"
+                      />
+                    ) : null
+                  }
                 />
 
                 {isEnriching ? (
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-3 animate-pulse">
-                    <div className="h-4 bg-gray-100 rounded-lg w-1/3" />
-                    <div className="h-4 bg-gray-100 rounded-lg w-2/3" />
-                    <div className="h-4 bg-gray-100 rounded-lg w-1/2" />
+                  <div className="border border-gray-200 rounded-xl p-5 space-y-3 animate-pulse">
+                    <div className="h-4 bg-gray-100 rounded w-1/3" />
+                    <div className="h-4 bg-gray-100 rounded w-2/3" />
+                    <div className="h-4 bg-gray-100 rounded w-1/2" />
                   </div>
                 ) : !payments || payments.length === 0 ? (
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-6 text-center text-sm text-gray-400">
-                    No payment records found for this booking.
+                  <div className="border border-gray-200 rounded-xl p-7 text-center">
+                    <CreditCard
+                      size={22}
+                      className="mx-auto text-gray-300 mb-2"
+                    />
+
+                    <p className="text-sm font-semibold text-gray-500">
+                      No payment records found
+                    </p>
+
+                    <p className="text-xs text-gray-400 mt-1">
+                      There are no payment transactions associated with this
+                      booking.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {payments.map((p, idx) => (
-                      <div key={p.id || idx} className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-4">
-
-                        {/* Payment header */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-                            Payment 
-                            <span className="text-xs font-semibold text-gray-400 ml-2 normal-case tracking-normal">
-                              ({p.paymentType || "GAME"})
-                            </span>
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                            p.status === "SUCCESS"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-red-50 text-red-600 border-red-200"
-                          }`}>
-                            {p.status}
-                          </span>
-                        </div>
-
-                        {/* Amount + Method */}
-                        <div className="grid grid-cols-2 gap-5 pb-4 border-b border-gray-100">
-                          <Field label="Amount Paid" value={`৳${p.amount || "0"}`} />
-                          <Field label="Payment Method" value={p.paymentMethod} />
-                        </div>
-
-                        {/* Transaction ID + Order ID — prominent copy */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <div>
-                            <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                              Transaction ID
-                            </span>
-                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                              <span className="text-sm font-bold font-mono text-gray-800 select-all truncate flex-1">
-                                {p.transactionId || "—"}
-                              </span>
-                              {p.transactionId && <CopyButton value={p.transactionId} />}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                              Order ID
-                            </span>
-                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                              <span className="text-sm font-bold font-mono text-gray-800 select-all truncate flex-1">
-                                {p.customerOrderId || "—"}
-                              </span>
-                              {p.customerOrderId && <CopyButton value={p.customerOrderId} />}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Customer details at payment */}
-                        <div className="pt-3 border-t border-gray-100">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                            Customer Details (Provided at Payment)
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <Field label="Name"  value={p.customerName} />
-                            <Field label="Email" value={p.customerEmail} copy />
-                            <Field label="Phone" value={p.customerPhone} copy />
-                          </div>
-                        </div>
-
-                        {/* Timestamps */}
-                        <div className="pt-2 border-t border-gray-100/70 flex flex-wrap gap-4 text-xs text-gray-400">
-                          <span>Paid At: <span className="font-semibold text-gray-500">{p.createdAt ? new Date(p.createdAt).toLocaleString() : "—"}</span></span>
-                          <span>Updated: <span className="font-semibold text-gray-500">{p.updatedAt ? new Date(p.updatedAt).toLocaleString() : "—"}</span></span>
-                        </div>
-                      </div>
+                    {payments.map((payment, index) => (
+                      <PaymentCard
+                        key={payment.id || index}
+                        payment={payment}
+                        index={index}
+                      />
                     ))}
                   </div>
                 )}
               </section>
-            </>
+            </div>
           ) : (
-            <div className="py-12 text-center text-sm text-gray-400">No booking details found.</div>
+            <div className="py-12 text-center">
+              <Calendar
+                size={24}
+                className="mx-auto text-gray-300 mb-2"
+              />
+
+              <p className="text-sm font-semibold text-gray-500">
+                No booking details found.
+              </p>
+            </div>
           )}
         </div>
 
-        {/* ── Footer ───────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl shrink-0">
+        {/* Footer */}
+        <div className="flex items-center justify-end px-5 sm:px-7 py-3.5 border-t border-gray-100 bg-gray-50/60 shrink-0">
           <button
+            type="button"
             onClick={onClose}
-            className="px-6 py-2.5 bg-[#1E293B] hover:bg-[#0f172a] text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-sm"
+            className="px-5 py-2.5 bg-[#1E293B] hover:bg-[#0f172a] text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer shadow-sm"
           >
             Close
           </button>
@@ -421,8 +706,15 @@ const BookingDetailsModal = ({ bookingId, initialData = null, onClose }) => {
 
       <style>{`
         @keyframes modalIn {
-          from { opacity: 0; transform: scale(0.96) translateY(10px); }
-          to   { opacity: 1; transform: scale(1)    translateY(0); }
+          from {
+            opacity: 0;
+            transform: scale(0.97) translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
       `}</style>
     </div>,

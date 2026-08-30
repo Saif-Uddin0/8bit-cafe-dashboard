@@ -248,8 +248,7 @@ const Schedule = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Schedule</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-md text-gray-900 font-semibold mt-0.5">
               {selectedIsToday ? "Today — " : ""}{formatHeaderDate(currentDate)}
             </p>
           </div>

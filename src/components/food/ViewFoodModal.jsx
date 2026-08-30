@@ -1,202 +1,633 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 import {
-  X, Utensils, Tag, Clock, Truck, FileText,
-  CheckCircle2, XCircle, Image as ImageIcon, Pencil, Percent,
+  X,
+  Utensils,
+  Tag,
+  Clock,
+  Truck,
+  CheckCircle2,
+  XCircle,
+  Image as ImageIcon,
+  Pencil,
+  Percent,
+  CalendarDays,
 } from "lucide-react";
+import ImageCarousel from "../global/ImageCarousel";
 
-const InfoRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
-    <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
-      <Icon size={13} className="text-gray-500" />
+const InfoField = ({ icon: Icon, label, value }) => {
+  const hasValue =
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    value !== "—";
+
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        {Icon && <Icon size={12} className="text-[#532C89]" />}
+
+        <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em]">
+          {label}
+        </span>
+      </div>
+
+      <p className="text-sm font-semibold text-gray-800 leading-snug break-words">
+        {hasValue ? value : "N/A"}
+      </p>
     </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-semibold text-gray-800 mt-0.5 break-words">{value ?? "—"}</p>
-    </div>
-  </div>
+  );
+};
+
+const StatusBadge = ({ available }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide ${
+      available
+        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+        : "bg-red-50 text-red-600 border-red-200"
+    }`}
+  >
+    {available ? (
+      <CheckCircle2 size={11} />
+    ) : (
+      <XCircle size={11} />
+    )}
+
+    {available ? "Available" : "Unavailable"}
+  </span>
 );
 
 const ViewFoodModal = ({ food, onClose, onEdit }) => {
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
     };
   }, [onClose]);
 
   if (!food) return null;
 
   const images = Array.isArray(food.images) ? food.images : [];
-  const isAvailable = !food.isDelete && food.status !== "UNAVAILABLE";
+
+  const isAvailable =
+    !food.isDelete && food.status !== "UNAVAILABLE";
+
   const categoryName =
-    typeof food.category === "object" ? food.category?.name : food.category;
-  
-  // Backend stores isDisCount (capital C) and disCountParcentage
-  const discountVal = food.disCountParcentage ?? food.discountParcentage ?? food.discountPercentage ?? food.discountParcenTage ?? 0;
-  const showDiscount = (food.isDisCount ?? food.isDiscount) && Number(discountVal) > 0;
+    typeof food.category === "object"
+      ? food.category?.name
+      : food.category;
+
+  // The backend uses different spellings for discount fields.
+  const discountVal =
+    food.disCountParcentage ??
+    food.discountParcentage ??
+    food.discountPercentage ??
+    food.discountParcenTage ??
+    0;
+
+  const showDiscount =
+    (food.isDisCount ?? food.isDiscount) &&
+    Number(discountVal) > 0;
+
+  const deliveryFee =
+    food.delivery_fee ?? food.deliveryFee;
+
+  const deliveryTime =
+    food.delivery_time ?? food.deliveryTime;
+
+  const getImageUrl = (image) => {
+    if (typeof image === "object") {
+      return image?.url;
+    }
+
+    return image;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/55 backdrop-blur-[3px] p-3 sm:p-5"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col"
-        style={{ maxHeight: "calc(100vh - 24px)", animation: "modalIn 0.2s ease-out" }}
+        className="
+          relative
+          bg-white
+          w-full
+          max-w-2xl
+          rounded-2xl
+          shadow-[0_20px_60px_rgba(0,0,0,0.18)]
+          overflow-hidden
+          flex
+          flex-col
+        "
+        style={{
+          maxHeight: "calc(100vh - 32px)",
+          animation: "modalIn 0.2s ease-out",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div>
-              <h2 className="text-base font-bold text-gray-900 leading-none">Food Details</h2>
-            </div>
+        {/* Header */}
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            px-5
+            sm:px-7
+            py-4
+            border-b
+            border-gray-100
+            shrink-0
+          "
+        >
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+              Food Details
+            </h2>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
+            aria-label="Close"
+            className="
+              w-9
+              h-9
+              rounded-lg
+              flex
+              items-center
+              justify-center
+              text-gray-400
+              hover:text-gray-700
+              hover:bg-gray-100
+              transition-all
+              cursor-pointer
+              shrink-0
+            "
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* ── Scrollable Body ── */}
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-5 sm:px-7 py-5">
+          <div className="space-y-7">
 
-          {/* Hero: image gallery + name + status */}
-          <div className="flex items-start gap-4">
-            {/* Image gallery — show up to 2 */}
-            <div className="flex gap-2 shrink-0">
-              {images.length > 0 ? (
-                images.slice(0, 2).map((src, i) => (
-                  <img
-                    key={i}
-                    src={typeof src === "object" ? src?.url : src}
-                    alt={`${food.name}-${i}`}
-                    className="w-20 h-20 rounded-xl object-cover border border-gray-100"
-                  />
-                ))
-              ) : (
-                <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300">
-                  <ImageIcon size={28} />
+            {/* Food Overview */}
+            <section>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Utensils
+                  size={16}
+                  className="text-[#532C89]"
+                />
+
+                <h3 className="text-[13px] font-bold text-gray-700">
+                  Food Overview
+                </h3>
+
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
+
+              <div
+                className="
+                  border
+                  border-gray-100
+                  rounded-xl
+                  overflow-hidden
+                  bg-gray-50/40
+                "
+              >
+                <div className="flex flex-col sm:flex-row gap-5 p-4 sm:p-5">
+
+                  {/* Main Image Slider */}
+                  <div
+                    className="
+                      w-full
+                      sm:w-40
+                      h-40
+                      sm:h-32
+                      shrink-0
+                      rounded-xl
+                      overflow-hidden
+                      border
+                      border-gray-200
+                      bg-gray-100
+                    "
+                  >
+                    <ImageCarousel
+                      images={images}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Food Info */}
+                  <div className="flex-1 min-w-0">
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight break-words">
+                          {food.name || "N/A"}
+                        </h3>
+
+                        {categoryName && (
+                          <div className="mt-2">
+                            <span
+                              className="
+                                inline-flex
+                                items-center
+                                gap-1.5
+                                px-2.5
+                                py-1
+                                rounded-full
+                                bg-[#532C89]/5
+                                text-[#532C89]
+                                border
+                                border-[#532C89]/10
+                                text-[10px]
+                                font-bold
+                              "
+                            >
+                              <Tag size={10} />
+                              {categoryName}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <StatusBadge available={isAvailable} />
+                    </div>
+
+                    {food.short_description && (
+                      <p
+                        className="
+                          text-sm
+                          text-gray-500
+                          leading-relaxed
+                          mt-3
+                          line-clamp-3
+                        "
+                      >
+                        {food.short_description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            </section>
 
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-gray-900 leading-tight truncate">{food.name}</h3>
+            {/* Pricing */}
+            <section>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Tag
+                  size={16}
+                  className="text-[#532C89]"
+                />
 
-              {/* Status + Category badges */}
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                  isAvailable ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
-                }`}>
-                  {isAvailable ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                  {isAvailable ? "Available" : "Unavailable"}
-                </span>
-                {categoryName && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-600">
-                    <Tag size={10} />
-                    {categoryName}
+                <h3 className="text-[13px] font-bold text-gray-700">
+                  Pricing & Delivery
+                </h3>
+
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                {/* Price */}
+                <div
+                  className="
+                    rounded-xl
+                    border
+                    border-gray-100
+                    bg-gray-50/60
+                    p-4
+                  "
+                >
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-2">
+                    Price
                   </span>
-                )}
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-semibold text-gray-500">
+                      ৳
+                    </span>
+
+                    <span className="text-xl font-bold text-gray-900">
+                      {food.price ?? "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Delivery Fee */}
+                <div
+                  className="
+                    rounded-xl
+                    border
+                    border-gray-100
+                    bg-gray-50/60
+                    p-4
+                  "
+                >
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-2">
+                    Delivery Fee
+                  </span>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-semibold text-gray-500">
+                      ৳
+                    </span>
+
+                    <span className="text-xl font-bold text-gray-900">
+                      {deliveryFee ?? "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Delivery Time */}
+                <div
+                  className="
+                    rounded-xl
+                    border
+                    border-gray-100
+                    bg-gray-50/60
+                    p-4
+                  "
+                >
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-2">
+                    Delivery Time
+                  </span>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-gray-900">
+                      {deliveryTime ?? "N/A"}
+                    </span>
+
+                    {deliveryTime && (
+                      <span className="text-xs font-medium text-gray-400">
+                        min
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Discount */}
+            {showDiscount && (
+              <section>
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-4
+                    rounded-xl
+                    border
+                    border-amber-200
+                    bg-amber-50/70
+                    px-4
+                    py-3.5
+                  "
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="
+                        w-9
+                        h-9
+                        rounded-lg
+                        bg-amber-100
+                        flex
+                        items-center
+                        justify-center
+                        shrink-0
+                      "
+                    >
+                      <Percent
+                        size={16}
+                        className="text-amber-600"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold text-gray-700">
+                        Active Discount
+                      </p>
+
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Special discount is currently applied to this food.
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-base sm:text-lg font-bold text-amber-600 shrink-0">
+                    {discountVal}% OFF
+                  </span>
+                </div>
+              </section>
+            )}
+
+            {/* Food Information */}
+            <section>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Utensils
+                  size={16}
+                  className="text-[#532C89]"
+                />
+
+                <h3 className="text-[13px] font-bold text-gray-700">
+                  Food Information
+                </h3>
+
+                <div className="h-px flex-1 bg-gray-100" />
               </div>
 
-              {food.short_description && (
-                <p className="text-xs text-gray-500 mt-2 leading-relaxed line-clamp-3">
-                  {food.short_description}
-                </p>
-              )}
-            </div>
-          </div>
+              <div
+                className="
+                  border
+                  border-gray-100
+                  rounded-xl
+                  overflow-hidden
+                "
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2">
 
-          {/* Pricing card */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-1 bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <p className="text-[10px] text-gray-400 mb-1">Price</p>
-              <p className="text-xl font-bold text-gray-900">৳{food.price ?? "—"}</p>
-            </div>
-            <div className="col-span-1 bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <p className="text-[10px] text-gray-400 mb-1">Delivery Fee</p>
-              <p className="text-xl font-bold text-gray-900">৳{food.delivery_fee ?? food.deliveryFee ?? "—"}</p>
-            </div>
-            <div className="col-span-1 bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <p className="text-[10px] text-gray-400 mb-1">Delivery Time</p>
-              <p className="text-xl font-bold text-gray-900">
-                {food.delivery_time ?? food.deliveryTime ?? "—"}
-                {(food.delivery_time || food.deliveryTime) && (
-                  <span className="text-xs font-normal text-gray-400 ml-0.5">min</span>
-                )}
-              </p>
-            </div>
-          </div>
+                  <div className="p-4 sm:p-5">
+                    <InfoField
+                      icon={CheckCircle2}
+                      label="Status"
+                      value={food.status ?? "AVAILABLE"}
+                    />
+                  </div>
 
-          {/* Discount Segment */}
-          {showDiscount && (
-            <div className="flex items-center gap-3 p-3 rounded-xl border bg-amber-50 border-amber-200">
-              <Percent size={16} className="text-amber-500" />
-              <div>
-                <p className="text-xs font-semibold text-gray-700">Discount Active</p>
-                <p className="text-sm font-bold text-amber-600">
-                  {discountVal}% off
-                </p>
+                  <div className="p-4 sm:p-5 sm:border-l border-gray-100">
+                    <InfoField
+                      icon={Tag}
+                      label="Category"
+                      value={categoryName}
+                    />
+                  </div>
+
+                  <div className="p-4 sm:p-5 border-t border-gray-100">
+                    <InfoField
+                      icon={Clock}
+                      label="Delivery Time"
+                      value={
+                        deliveryTime
+                          ? `${deliveryTime} minutes`
+                          : null
+                      }
+                    />
+                  </div>
+
+                  <div className="p-4 sm:p-5 sm:border-l border-gray-100 border-t">
+                    <InfoField
+                      icon={Truck}
+                      label="Delivery Fee"
+                      value={
+                        deliveryFee !== null &&
+                        deliveryFee !== undefined
+                          ? `৳${deliveryFee}`
+                          : null
+                      }
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            </section>
 
-          {/* Details list */}
-          <div className="bg-gray-50/70 rounded-xl border border-gray-100 px-3 divide-y divide-gray-100">
-            <InfoRow icon={CheckCircle2} label="Status" value={food.status ?? "AVAILABLE"} />
-            <InfoRow icon={Tag} label="Category" value={categoryName} />
-            <InfoRow icon={Clock} label="Delivery Time" value={food.delivery_time ? `${food.delivery_time} mins` : food.deliveryTime} />
-            <InfoRow icon={Truck} label="Delivery Fee" value={food.delivery_fee != null ? `৳${food.delivery_fee}` : food.deliveryFee} />
-          </div>
 
-          {/* All images */}
-          {images.length > 1 && (
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">All Images</p>
-              <div className="flex flex-wrap gap-2">
-                {images.map((src, i) => (
-                  <img
-                    key={i}
-                    src={typeof src === "object" ? src?.url : src}
-                    alt={`img-${i}`}
-                    className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+
+            {/* Metadata */}
+            <section>
+              <div className="flex items-center gap-2.5 mb-4">
+                <CalendarDays
+                  size={16}
+                  className="text-[#532C89]"
+                />
+
+                <h3 className="text-[13px] font-bold text-gray-700">
+                  Record Information
+                </h3>
+
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <InfoField
+                    icon={CalendarDays}
+                    label="Created"
+                    value={formatDate(food.createdAt)}
                   />
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
 
-          {/* Meta timestamps */}
-          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-gray-100 text-xs text-gray-400">
-            <div>
-              <p className="font-semibold text-gray-500">Created</p>
-              <p>{food.createdAt ? new Date(food.createdAt).toLocaleDateString() : "—"}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-500">Updated</p>
-              <p>{food.updatedAt ? new Date(food.updatedAt).toLocaleDateString() : "—"}</p>
-            </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <InfoField
+                    icon={CalendarDays}
+                    label="Last Updated"
+                    value={formatDate(food.updatedAt)}
+                  />
+                </div>
+
+              </div>
+            </section>
+
           </div>
         </div>
 
-        {/* ── Footer ── */}
-        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl shrink-0">
+        {/* Footer */}
+        <div
+          className="
+            flex
+            flex-col-reverse
+            sm:flex-row
+            sm:items-center
+            sm:justify-end
+            gap-2.5
+            px-5
+            sm:px-7
+            py-3.5
+            border-t
+            border-gray-100
+            bg-gray-50/50
+            shrink-0
+          "
+        >
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 hover:border-gray-400 transition-all cursor-pointer"
+            className="
+              w-full
+              sm:w-auto
+              px-5
+              py-2.5
+              border
+              border-gray-300
+              bg-white
+              hover:bg-gray-50
+              hover:border-gray-400
+              text-gray-600
+              hover:text-gray-800
+              rounded-lg
+              text-sm
+              font-semibold
+              transition-all
+              cursor-pointer
+            "
           >
             Close
           </button>
+
           <button
-            onClick={() => { onClose(); onEdit(food); }}
-            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md"
+            type="button"
+            onClick={() => {
+              onClose();
+              onEdit(food);
+            }}
+            className="
+              w-full
+              sm:w-auto
+              px-5
+              py-2.5
+              bg-[#1E293B]
+              hover:bg-[#0f172a]
+              text-white
+              rounded-lg
+              text-sm
+              font-semibold
+              transition-all
+              cursor-pointer
+              flex
+              items-center
+              justify-center
+              gap-2
+              shadow-sm
+            "
           >
             <Pencil size={14} />
             Edit Food
@@ -206,8 +637,15 @@ const ViewFoodModal = ({ food, onClose, onEdit }) => {
 
       <style>{`
         @keyframes modalIn {
-          from { opacity: 0; transform: scale(0.95) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
+          from {
+            opacity: 0;
+            transform: scale(0.97) translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
       `}</style>
     </div>,

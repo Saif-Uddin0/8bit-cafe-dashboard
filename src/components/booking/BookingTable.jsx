@@ -13,6 +13,7 @@ const STATUS_STYLES = {
   PENDING: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-blue-100 text-blue-700",
   CANCELLED: "bg-red-100 text-red-700",
+  FAILED: "bg-red-100 text-red-700",
   EXPIRED: "bg-red-100 text-red-700",
 };
 
@@ -21,6 +22,7 @@ const STATUS_LABELS = {
   PENDING: "Pending",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
+  FAILED: "Failed",
   EXPIRED: "Expired",
 };
 
