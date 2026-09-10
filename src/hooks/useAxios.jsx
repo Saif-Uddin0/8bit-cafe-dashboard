@@ -39,6 +39,22 @@ axiosSecure.interceptors.response.use(
       const msg =
         error.response?.data?.message || "Unauthorized access";
       toast.error(msg);
+
+      // Clear invalid session from both storages
+      const AUTH_KEYS = ["accessToken", "refreshToken", "user", "role"];
+      AUTH_KEYS.forEach((key) => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+
+      // Expire cookies
+      document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;";
+      document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;";
+
+      // Redirect to login — skip if already on the login page to avoid infinite redirect
+      if (!window.location.pathname.startsWith("/auth")) {
+        window.location.href = "/auth/login";
+      }
     }
 
     return Promise.reject(error);

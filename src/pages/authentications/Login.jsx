@@ -42,6 +42,7 @@ const Login = () => {
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
+        err?.message ||
         "Invalid email or password.";
 
       toast.error(message);

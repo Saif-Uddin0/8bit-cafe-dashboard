@@ -70,35 +70,44 @@ export const AuthProvider = ({ children }) => {
       throw new Error("Login succeeded but no access token was returned. Check console for full response.");
     }
 
-    // Role may live directly on the data block or inside the user object
-    let role =
+    // Fetch full profile data via /api/user/getMe to ensure we have image, names, etc.
+    let meData = {};
+    try {
+      const meRes = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/user/getMe`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+      meData = meRes.data?.data ?? meRes.data ?? {};
+    } catch (err) {
+      console.error("Failed to fetch full user profile after login", err);
+    }
+
+    // Role may live on dataBlock, user object, or getMe response
+    const role =
       dataBlock?.role
       ?? dataBlock?.user?.role
       ?? responseData?.role
+      ?? meData?.role
       ?? null;
-
-    // If role is missing from login response, fetch it using /api/user/getMe
-    if (!role) {
-      try {
-        const meRes = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/user/getMe`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "ngrok-skip-browser-warning": "true",
-            },
-          }
-        );
-        role = meRes.data?.data?.role ?? meRes.data?.role ?? null;
-      } catch (err) {
-        console.error("Failed to fetch user role after login", err);
-      }
-    }
 
     const userData = {
       ...(dataBlock?.user ?? responseData?.user ?? { email }),
+      ...meData,
       ...(role ? { role } : {}),
     };
+
+    const ALLOWED_ROLES = ["ADMIN", "SUB_ADMIN"];
+    if (!role || !ALLOWED_ROLES.includes(role)) {
+      clearStorage(localStorage);
+      clearStorage(sessionStorage);
+      setUser(null);
+      throw new Error(`Access denied: ${role || "GUEST"} users are not allowed to access the dashboard.`);
+    }
 
     // --- Storage cleanup ---
     // Always clear both storages before saving to prevent stale session conflicts.
@@ -143,6 +152,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  /* UPDATE USER DATA IN STATE & STORAGE */
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...updatedFields };
+      const storage = findActiveStorage();
+      if (storage) {
+        storage.setItem("user", JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
 
   /* RESTORE SESSION */
   useEffect(() => {
@@ -169,17 +190,27 @@ export const AuthProvider = ({ children }) => {
       parsed = JSON.parse(savedUser);
     } catch {
       // Corrupted JSON — discard the whole session cleanly
-      clearStorage(storage);
+      clearStorage(localStorage);
+      clearStorage(sessionStorage);
       setLoading(false);
       return;
     }
 
-    if (savedRole) {
-      // Role already stored — restore instantly, no API call needed
-      setUser({ ...parsed, role: savedRole });
+    const ALLOWED_ROLES = ["ADMIN", "SUB_ADMIN"];
+
+    if (savedRole && !ALLOWED_ROLES.includes(savedRole)) {
+      clearStorage(localStorage);
+      clearStorage(sessionStorage);
+      setUser(null);
       setLoading(false);
-    } else if (savedToken) {
-      // Role missing (pre-existing session) — fetch it from the API
+      return;
+    }
+
+    // Immediately restore parsed session to prevent UI flicker
+    setUser(parsed);
+
+    // If token exists, fetch fresh getMe to keep image and profile data up-to-date
+    if (savedToken) {
       axios
         .get(`${import.meta.env.VITE_API_URL}/api/user/getMe`, {
           headers: {
@@ -188,23 +219,26 @@ export const AuthProvider = ({ children }) => {
           },
         })
         .then((res) => {
-          const apiRole = res.data?.data?.role ?? null;
-          if (apiRole) {
-            storage.setItem("role", apiRole); // Persist into whichever storage we restored from
-            setUser({ ...parsed, role: apiRole });
+          const meData = res.data?.data ?? res.data ?? {};
+          const apiRole = meData?.role ?? savedRole ?? null;
+          if (apiRole && ALLOWED_ROLES.includes(apiRole)) {
+            const updatedUser = { ...parsed, ...meData, role: apiRole };
+            storage.setItem("role", apiRole);
+            storage.setItem("user", JSON.stringify(updatedUser));
+            setUser(updatedUser);
           } else {
-            setUser(parsed);
+            clearStorage(localStorage);
+            clearStorage(sessionStorage);
+            setUser(null);
           }
         })
         .catch(() => {
-          // API failed — restore without role; guards will re-fetch themselves
-          setUser(parsed);
+          // Network fail — keep current parsed session if role is valid
         })
         .finally(() => {
           setLoading(false);
         });
     } else {
-      setUser(parsed);
       setLoading(false);
     }
   }, []);
@@ -213,6 +247,8 @@ export const AuthProvider = ({ children }) => {
   /* CONTEXT VALUE */
   const authInfo = {
     user,
+    setUser,
+    updateUser,
     login,
     logout,
     loading,

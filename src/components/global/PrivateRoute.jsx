@@ -2,11 +2,13 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "../../pages/Provider/AuthProvider";
 
+const ALLOWED_ROLES = ["ADMIN", "SUB_ADMIN"];
+
 const PrivateRoute = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Still hydrating from localStorage — show spinner to avoid flash-redirect
+  // Still hydrating from storage — show spinner to avoid flash-redirect
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
@@ -18,6 +20,11 @@ const PrivateRoute = () => {
   // Not logged in → redirect, preserve the page they were trying to visit
   if (!user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  // User role must be ADMIN or SUB_ADMIN
+  if (!ALLOWED_ROLES.includes(user?.role)) {
+    return <Navigate to="/auth/login" replace />;
   }
 
   return <Outlet />;

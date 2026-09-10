@@ -34,7 +34,6 @@ const TodaysBookingsTable = ({ gamesbooking = [], isLoading = false }) => {
     <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-sm flex flex-col h-full min-h-[350px]">
       <div className="mb-4">
         <h2 className="text-lg font-bold text-gray-800">Today's Game Transactions</h2>
-        <p className="text-xs text-gray-400 font-semibold mt-0.5">{today}</p>
       </div>
 
       {isLoading ? (

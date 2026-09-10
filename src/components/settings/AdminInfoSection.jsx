@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useAxiosSecure from "../../hooks/useAxios";
 import { toast } from "react-hot-toast";
 
-// ── Shared primitives ───────────────────────────────────────────────────────────
+import { useAuth } from "../../pages/Provider/AuthProvider";
+
+//  Shared primitives 
 
 const Card = ({ children }) => (
   <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
@@ -70,7 +72,7 @@ const Field = ({ label, value = "", onChange, type = "text", readOnly }) => (
   </div>
 );
 
-// ── Avatar uploader (self-contained component with its own ref) ─────────────────
+//  Avatar uploader (self-contained component with its own ref) 
 
 const AvatarUploader = ({ currentImageUrl, isEditing, onFileSelect, previewUrl }) => {
   // useRef is valid here — AvatarUploader is a proper React component
@@ -135,11 +137,12 @@ const AvatarUploader = ({ currentImageUrl, isEditing, onFileSelect, previewUrl }
   );
 };
 
-// ── Main component ──────────────────────────────────────────────────────────────
+//   Main component  
 
 const AdminInfoSection = () => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
+  const { updateUser } = useAuth();
 
   // draft holds the in-progress edits; null when not editing
   const [draft, setDraft] = useState(null);
@@ -150,27 +153,35 @@ const AdminInfoSection = () => {
   // Local object URL for instant preview before the upload completes
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  // ── GET /api/user/getMe ───────────────────────────────────────────────────────
+  //  GET /api/user/getMe 
   const { data: adminData, isLoading } = useQuery({
     queryKey: ["adminProfile"],
     queryFn: async () => {
       const res = await axiosSecure.get("/api/user/getMe");
-      // API shape: { success: true, data: { firstName, lastName, email, role, phone, image, ... } }
-      return res.data?.data ?? {};
+      const me = res.data?.data ?? {};
+      // Sync latest getMe profile data into global AuthProvider user state
+      if (me && Object.keys(me).length > 0) {
+        updateUser(me);
+      }
+      return me;
     },
   });
 
-  // ── PATCH /api/user/profileUpdate (multipart/form-data) ───────────────────────
+  //  PATCH /api/user/profileUpdate (multipart/form-data) 
   const updateMutation = useMutation({
     mutationFn: async (formData) => {
       // axiosSecure automatically attaches the Bearer token.
       const res = await axiosSecure.patch("/api/user/updateUser", formData);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Profile updated successfully!");
       // Invalidate so the GET re-runs and the UI reflects server state
       queryClient.invalidateQueries({ queryKey: ["adminProfile"] });
+      const updatedUser = data?.data || data?.user;
+      if (updatedUser) {
+        updateUser(updatedUser);
+      }
       setIsEditing(false);
       setDraft(null);
       setImageFile(null);
@@ -184,7 +195,7 @@ const AdminInfoSection = () => {
     },
   });
 
-  // ── Build the "display" snapshot from the API response ────────────────────────
+  //  Build the "display" snapshot from the API response 
   // All values default to "" so controlled inputs never receive undefined
   const profileFromAPI = {
     firstName: adminData?.firstName ?? "",
@@ -202,7 +213,7 @@ const AdminInfoSection = () => {
   const set = (key) => (e) =>
     setDraft((prev) => ({ ...prev, [key]: e.target.value }));
 
-  // ── Handlers ──────────────────────────────────────────────────────────────────
+  //  Handlers 
 
   const handleEdit = () => {
     // Seed the draft from the latest API data
@@ -277,7 +288,7 @@ const AdminInfoSection = () => {
   // Guard: if draft is somehow null while isEditing, fall back to profileFromAPI
   const v = (isEditing && draft) ? draft : profileFromAPI;
 
-  // ── Loading state ─────────────────────────────────────────────────────────────
+  //  Loading state 
 
   if (isLoading) {
     return (
@@ -290,7 +301,7 @@ const AdminInfoSection = () => {
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  //   Render  
 
   return (
     <Card>

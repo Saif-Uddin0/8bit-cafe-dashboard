@@ -73,10 +73,6 @@ const Sidebar = ({ closeSidebar }) => {
   const navigate = useNavigate();
   const { user, logout, loading } = useAuth();
 
-  const token =
-    localStorage.getItem("accessToken") ||
-    sessionStorage.getItem("accessToken");
-
   const role = user?.role || "";
   const isSubAdmin = role === "SUB_ADMIN";
 
@@ -198,7 +194,7 @@ const Sidebar = ({ closeSidebar }) => {
                 "Admin User";
               const firstLetter = displayName.charAt(0).toUpperCase() || "A";
               const profileImg =
-                user?.profileImg || user?.profileImage || user?.image;
+                user?.image || user?.profileImg || user?.profileImage || user?.avatar;
 
               return (
                 <>
@@ -206,10 +202,13 @@ const Sidebar = ({ closeSidebar }) => {
                     <img
                       src={profileImg}
                       alt={displayName}
-                      className="w-8 h-8 rounded-full object-cover border border-white/20"
+                      className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-white text-[#532C89] flex items-center justify-center text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full bg-white text-[#532C89] flex items-center justify-center text-xs font-bold shrink-0">
                       {firstLetter}
                     </div>
                   )}
@@ -225,7 +224,7 @@ const Sidebar = ({ closeSidebar }) => {
 
           </div>
 
-          {token || user ? (
+          {user ? (
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs font-semibold text-white transition-colors cursor-pointer"
