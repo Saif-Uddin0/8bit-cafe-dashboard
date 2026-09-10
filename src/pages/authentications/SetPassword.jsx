@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Lock, Eye, EyeOff, ChevronLeft } from "lucide-react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 import logo from "../../assets/logo-dash.png";
 import setPassBg from "../../assets/set-pass.png";
 
@@ -10,18 +12,62 @@ const SetPassword = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [form, setForm] = useState({ password: "", confirm: "" });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
     }
+
     setError("");
-    // TODO: call API to set new password
-    navigate("/auth/login");
+    setIsLoading(true);
+
+    try {
+      const token =
+        localStorage.getItem("accessToken") ||
+        sessionStorage.getItem("accessToken");
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/auth/changePassword`,
+        {
+          newPassword: form.password,
+          confirmPassword: form.confirm,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      if (res.data?.success) {
+        toast.success(res.data?.message || "Password changed successfully!");
+        navigate("/auth/login");
+      } else {
+        setError(res.data?.message || "Failed to change password.");
+      }
+    } catch (err) {
+      console.error("Change password error:", err);
+      const valError = err?.response?.data?.errors?.[0]?.message;
+      const msg =
+        valError ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to change password.";
+
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,9 +115,10 @@ const SetPassword = () => {
                 placeholder="Password"
                 value={form.password}
                 onChange={set("password")}
+                disabled={isLoading}
                 required
                 minLength={6}
-                className="w-full pl-12 pr-12 py-3 sm:py-3.5 border border-gray-200 rounded-xl md:rounded-2xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all placeholder-gray-400 text-gray-900 bg-white"
+                className="w-full pl-12 pr-12 py-3 sm:py-3.5 border border-gray-200 rounded-xl md:rounded-2xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all placeholder-gray-400 text-gray-900 bg-white disabled:opacity-60"
               />
               <button
                 type="button"
@@ -91,8 +138,9 @@ const SetPassword = () => {
                 placeholder="Confirm Password"
                 value={form.confirm}
                 onChange={set("confirm")}
+                disabled={isLoading}
                 required
-                className="w-full pl-12 pr-12 py-3 sm:py-3.5 border border-gray-200 rounded-xl md:rounded-2xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all placeholder-gray-400 text-gray-900 bg-white"
+                className="w-full pl-12 pr-12 py-3 sm:py-3.5 border border-gray-200 rounded-xl md:rounded-2xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all placeholder-gray-400 text-gray-900 bg-white disabled:opacity-60"
               />
               <button
                 type="button"
@@ -114,9 +162,17 @@ const SetPassword = () => {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3.5 bg-black text-white font-bold text-sm md:text-base rounded-xl hover:bg-gray-900 active:scale-[0.99] transition-all shadow-md mt-3 cursor-pointer"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-black text-white font-bold text-sm md:text-base rounded-xl hover:bg-gray-900 active:scale-[0.99] transition-all shadow-md mt-3 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Done
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Updating password...</span>
+                </>
+              ) : (
+                "Done"
+              )}
             </button>
           </form>
         </div>
