@@ -7,8 +7,10 @@ const axiosSecure = axios.create({
 });
 
 axiosSecure.interceptors.request.use((config) => {
-  // Read from localStorage — exact raw JWT, no encoding issues
-  const token = localStorage.getItem("accessToken");
+  // Read from localStorage or sessionStorage
+  const token =
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem("accessToken");
 
   // Always include this header so ngrok doesn't block the request
   config.headers["ngrok-skip-browser-warning"] = "true";

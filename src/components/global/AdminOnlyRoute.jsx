@@ -9,7 +9,9 @@ import useAxiosSecure from "../../hooks/useAxios";
 const AdminOnlyRoute = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
-  const token = localStorage.getItem("accessToken");
+  const token =
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem("accessToken");
 
   // Always fetch fresh role from the API
   const { data: adminData, isLoading } = useQuery({

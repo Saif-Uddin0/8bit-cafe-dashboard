@@ -33,6 +33,8 @@ const TransactionTable = ({
   onStatusFilterChange,
   typeFilter = "All",
   onTypeFilterChange,
+  methodFilter = "All",
+  onMethodFilterChange,
   sort = "date-newest",
   onSortChange,
   onResetFilters,
@@ -57,7 +59,7 @@ const TransactionTable = ({
   const curPage = currentPage;
   const pageData = transactions;
 
-  const hasFilters = searchTerm || statusFilter !== "All" || typeFilter !== "All" || sort !== "date-newest";
+  const hasFilters = searchTerm || statusFilter !== "All" || typeFilter !== "All" || methodFilter !== "All" || sort !== "date-newest";
 
   const handleReset = () => {
     if (onResetFilters) {
@@ -142,6 +144,19 @@ const TransactionTable = ({
                       ["All", "All Types"],
                       ["GAME", "Game Payment"],
                       ["FOOD", "Food Payment"],
+                    ],
+                  },
+                  {
+                    label: "Method",
+                    value: methodFilter,
+                    setter: onMethodFilterChange,
+                    options: [
+                      ["All", "All Methods"],
+                      ["BKash", "bKash"],
+                      ["Nagad", "Nagad"],
+                      ["Rocket", "Rocket"],
+                      ["Upay", "Upay"],
+                      ["Bank", "Bank Transfer"],
                     ],
                   },
                 ].map(({ label, value, setter, options }) => (

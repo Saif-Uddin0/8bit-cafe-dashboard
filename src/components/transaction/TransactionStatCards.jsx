@@ -4,11 +4,11 @@ import { Wallet, CheckCircle, Clock, XCircle } from "lucide-react";
 // Accepts the `data` object from /api/payment/all-transection-counter
 const TransactionStatCards = ({ stats = {} }) => {
   const totalCount   = stats.totalTransaction ?? 0;
-  const successCount = stats.status?.success?.count  ?? 0;
-  const pendingCount = stats.status?.pending?.count   ?? 0;
+  const successCount = stats.paymentStatus?.success?.count  ?? 0;
+  const pendingCount = stats.paymentStatus?.pending?.count   ?? 0;
   // Combine failed + cancelled into one "Failed / Cancelled" card
-  const failedCount  = (stats.status?.failed?.count    ?? 0)
-                     + (stats.status?.cancelled?.count ?? 0);
+  const failedCount  = (stats.paymentStatus?.failed?.count    ?? 0)
+                     + (stats.paymentStatus?.cancelled?.count ?? 0);
 
   const cards = [
     {

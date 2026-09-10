@@ -33,6 +33,7 @@ const Login = () => {
       await login({
         email: data.email,
         password: data.password,
+        remember: data.remember,
       });
 
       toast.success("Welcome back!");

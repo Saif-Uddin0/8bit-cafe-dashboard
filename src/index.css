@@ -68,3 +68,17 @@
 .swipe-hint {
   animation: swipe-bounce 1.6s ease-in-out infinite;
 }
+
+/* Disable Recharts focus outlines on click */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-responsive-container,
+.recharts-sector,
+.recharts-curve,
+.recharts-layer,
+.recharts-pie,
+.recharts-area {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}

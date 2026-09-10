@@ -1,34 +1,45 @@
 import React from "react";
 import { CalendarCheck2, Wallet, Gamepad2, CupSoda } from "lucide-react";
 
-const StatCards = () => {
+const StatCards = ({
+  totalTransaction = 0,
+  totalAmount = 0,
+  totalGame = 0,
+  totalFood = 0,
+  isLoading = false,
+}) => {
   const stats = [
     {
-      title: "TOTAL BOOKINGS",
-      value: "696",
+      title: "TOTAL TRANSACTIONS",
+      value: isLoading ? "..." : (totalTransaction ?? 0),
       icon: CalendarCheck2,
       bgColor: "bg-[#234EB71A]",
       iconColor: "text-[#000000]",
     },
     {
       title: "TOTAL REVENUE",
-      value: "950,380 Tk",
+      value: isLoading
+        ? "..."
+        : `${Number(totalAmount ?? 0).toLocaleString("en-US", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })} Tk`,
       icon: Wallet,
-      bgColor: "bg-[#FEF5E7]", 
+      bgColor: "bg-[#FEF5E7]",
       iconColor: "text-[#000000]",
     },
     {
       title: "TOTAL GAMES",
-      value: "6",
+      value: isLoading ? "..." : (totalGame ?? 0),
       icon: Gamepad2,
-      bgColor: "bg-[#7744B31A]", 
+      bgColor: "bg-[#7744B31A]",
       iconColor: "text-[#000000]",
     },
     {
       title: "TOTAL FOODS",
-      value: "69",
-      icon: CupSoda, 
-      bgColor: "bg-[#7744B31A]", 
+      value: isLoading ? "..." : (totalFood ?? 0),
+      icon: CupSoda,
+      bgColor: "bg-[#7744B31A]",
       iconColor: "text-[#000000]",
     },
   ];

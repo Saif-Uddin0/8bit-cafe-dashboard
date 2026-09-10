@@ -12,6 +12,7 @@ const Transaction = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [methodFilter, setMethodFilter] = useState("All");
   const [sort, setSort] = useState("date-newest");
 
   // 1. Paginated Transactions Query (for the table)
@@ -21,7 +22,7 @@ const Transaction = () => {
     isError: isTableError,
     error: tableError,
   } = useQuery({
-    queryKey: ["transactions", currentPage, searchTerm, statusFilter, typeFilter, sort],
+    queryKey: ["transactions", currentPage, searchTerm, statusFilter, typeFilter, methodFilter, sort],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -37,6 +38,9 @@ const Transaction = () => {
       if (typeFilter !== "All") {
         params.append("paymentType", typeFilter);
         params.append("type", typeFilter); // Send both to ensure backend match
+      }
+      if (methodFilter !== "All") {
+        params.append("method", methodFilter);
       }
 
       // Map sort value to standard sortBy & sortOrder if backend expects it
@@ -63,6 +67,7 @@ const Transaction = () => {
         status: statusFilter !== "All" ? statusFilter : undefined,
         paymentType: typeFilter !== "All" ? typeFilter : undefined,
         type: typeFilter !== "All" ? typeFilter : undefined,
+        method: methodFilter !== "All" ? methodFilter : undefined,
         sort: sort,
       };
 
@@ -98,6 +103,7 @@ const Transaction = () => {
     setSearchTerm("");
     setStatusFilter("All");
     setTypeFilter("All");
+    setMethodFilter("All");
     setSort("date-newest");
     setCurrentPage(1);
   };
@@ -134,6 +140,8 @@ const Transaction = () => {
             onStatusFilterChange={setStatusFilter}
             typeFilter={typeFilter}
             onTypeFilterChange={setTypeFilter}
+            methodFilter={methodFilter}
+            onMethodFilterChange={setMethodFilter}
             sort={sort}
             onSortChange={setSort}
             onResetFilters={handleResetFilters}

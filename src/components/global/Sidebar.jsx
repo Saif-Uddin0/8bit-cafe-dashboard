@@ -2,8 +2,6 @@ import React from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import logo from "../../assets/logo-dash.png";
 import { useAuth } from "../../pages/Provider/AuthProvider";
-import { useQuery } from "@tanstack/react-query";
-import useAxiosSecure from "../../hooks/useAxios";
 import {
   House,
   Users,
@@ -73,25 +71,13 @@ const menuItems = [
 
 const Sidebar = ({ closeSidebar }) => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const axiosSecure = useAxiosSecure();
+  const { user, logout, loading } = useAuth();
 
-  const token = localStorage.getItem("accessToken");
+  const token =
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem("accessToken");
 
-  // Fetch the logged-in user profile from the backend
-  const { data: adminData } = useQuery({
-    queryKey: ["adminProfile"],
-    queryFn: async () => {
-      const res = await axiosSecure.get("/api/user/getMe");
-      return res.data?.data ?? {};
-    },
-    enabled: !!token,
-    staleTime: 0, // always keep fresh for role-based UI
-  });
-
-
-  const storedRole = localStorage.getItem("role") || "";
-  const role = adminData?.role || user?.role || storedRole;
+  const role = user?.role || "";
   const isSubAdmin = role === "SUB_ADMIN";
 
   // Hide the Sub Admin entry for SUB_ADMIN users
@@ -147,16 +133,15 @@ const Sidebar = ({ closeSidebar }) => {
 
       <p className="text-[#2563EB] text-xs md:text-sm font-semibold">
         {(() => {
-          const displayRole = adminData?.role || user?.role || "Guest";
+          const displayRole = user?.role || "";
+          if (!displayRole) return loading ? "..." : "";
           const cleanedRole = displayRole
             .trim()
             .toLowerCase()
+            .replace(/_/g, " ")
             .replace(/-/g, " ");
 
-          return (
-            cleanedRole.charAt(0).toUpperCase() +
-            cleanedRole.slice(1)
-          );
+          return cleanedRole.replace(/\b\w/g, (char) => char.toUpperCase());
         })()}
       </p>
     </div>
@@ -204,11 +189,16 @@ const Sidebar = ({ closeSidebar }) => {
           <div className="flex items-center gap-2">
 
             {(() => {
-              const displayName = adminData 
-                ? `${adminData.firstName ?? ""} ${adminData.lastName ?? ""}`.trim() || adminData.name || user?.name || user?.email || "Admin User"
-                : user?.name || user?.email || "Admin User";
+              const displayName =
+                user?.name ||
+                (user?.firstName
+                  ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+                  : "") ||
+                user?.email ||
+                "Admin User";
               const firstLetter = displayName.charAt(0).toUpperCase() || "A";
-              const profileImg = adminData?.profileImg || adminData?.profileImage || adminData?.image || user?.profileImg || user?.profileImage;
+              const profileImg =
+                user?.profileImg || user?.profileImage || user?.image;
 
               return (
                 <>
