@@ -52,7 +52,7 @@ const TodaysBookingsTable = ({ gamesbooking = [], isLoading = false }) => {
                 {["Customer", "Payment Method", "Amount", "Time", "Status"].map((h) => (
                   <th
                     key={h}
-                    className="pb-3 pr-4 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                    className="pb-3 pr-4 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -64,24 +64,24 @@ const TodaysBookingsTable = ({ gamesbooking = [], isLoading = false }) => {
                 <tr key={item.id || item.gameBookingId} className="hover:bg-gray-50/50 transition-colors">
                   <td className="py-3 pr-4 text-sm font-semibold text-gray-800 whitespace-nowrap">
                     <div>
-                      <p className="font-semibold text-gray-800">{item.customerName || "Customer"}</p>
+                      <p className="font-semibold text-gray-900">{item.customerName || "Customer"}</p>
                       {item.customerPhone && (
-                        <p className="text-[11px] text-gray-400">{item.customerPhone}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.customerPhone}</p>
                       )}
                     </div>
                   </td>
-                  <td className="py-3 pr-4 text-sm text-gray-600 whitespace-nowrap">
+                  <td className="py-3 pr-4 text-sm text-gray-700 font-medium whitespace-nowrap">
                     {formatPaymentMethodName(item.paymentMethod)}
                   </td>
-                  <td className="py-3 pr-4 text-sm font-bold text-gray-800 whitespace-nowrap">
+                  <td className="py-3 pr-4 text-sm font-bold text-gray-900 whitespace-nowrap">
                     {item.amount} Tk
                   </td>
-                  <td className="py-3 pr-4 text-sm text-gray-600 whitespace-nowrap">
+                  <td className="py-3 pr-4 text-sm text-gray-700 font-medium whitespace-nowrap">
                     {formatTime(item.createdAt)}
                   </td>
                   <td className="py-3 text-sm whitespace-nowrap">
                     <span
-                      className={`inline-block px-2 py-0.5 text-[11px] font-bold rounded-full uppercase ${
+                      className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded-full uppercase ${
                         item.status === "SUCCESS"
                           ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                           : "bg-amber-50 text-amber-600 border border-amber-200"

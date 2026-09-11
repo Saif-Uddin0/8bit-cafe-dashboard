@@ -62,7 +62,7 @@ const StatCards = ({
               <h3 className="text-2xl md:text-3xl font-bold text-[#191C1E] leading-tight">
                 {stat.value}
               </h3>
-              <p className="text-[10px] md:text-xs font-bold text-[#64748B] tracking-wider mt-1 uppercase">
+              <p className="text-xs md:text-sm font-semibold text-[#475569] tracking-wider mt-1.5 uppercase">
                 {stat.title}
               </p>
             </div>

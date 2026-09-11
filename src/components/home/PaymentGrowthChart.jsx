@@ -31,7 +31,7 @@ const PaymentGrowthChart = ({
         <div>
           <h2 className="text-lg font-bold text-gray-800">Payment Growth</h2>
           {growthData?.totalAmount !== undefined && (
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
+            <p className="text-xs text-gray-600 font-semibold mt-0.5">
               Total: {Number(growthData.totalAmount).toLocaleString()} Tk ({growthData.totalTransactions ?? 0} txns)
             </p>
           )}
@@ -92,13 +92,13 @@ const PaymentGrowthChart = ({
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 10, fontWeight: 500 }}
+                tick={{ fill: "#6B7280", fontSize: 11, fontWeight: 500 }}
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 10, fontWeight: 500 }}
+                tick={{ fill: "#6B7280", fontSize: 11, fontWeight: 500 }}
                 tickFormatter={(v) => `${v}`}
                 dx={-5}
               />

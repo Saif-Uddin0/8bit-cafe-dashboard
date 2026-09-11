@@ -49,16 +49,16 @@ const TransactionsList = ({ foodsBooking = [], isLoading = false }) => (
               <span className="text-sm font-semibold text-gray-800">
                 {item.customerName || "Customer"}
               </span>
-              <span className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+              <span className="text-xs text-gray-600 mt-0.5 flex items-center gap-1.5 font-medium">
                 <span>{formatPaymentMethodName(item.paymentMethod)}</span>
                 <span>•</span>
-                <span className="text-[11px] text-gray-400">{formatTime(item.createdAt)}</span>
+                <span className="text-xs text-gray-500 font-medium">{formatTime(item.createdAt)}</span>
               </span>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-sm font-bold text-gray-800">{item.amount} Tk</span>
+              <span className="text-sm font-bold text-gray-900">{item.amount} Tk</span>
               <span
-                className={`text-[10px] font-bold ${
+                className={`text-xs font-bold mt-0.5 ${
                   item.status === "SUCCESS" ? "text-emerald-600" : "text-amber-600"
                 }`}
               >
